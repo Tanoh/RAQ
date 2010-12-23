@@ -1,0 +1,225 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"   xsi:schemaLocation="http://www.blizzard.com/wow/ui/"> 
+
+<Script file="Achievements.lua" />
+<Script file="RAQ.lua" />
+
+
+<Button name="RAQFrameDataButtonTemplate" virtual="true">
+	<Size x="20" y="20" />
+	<Layers>
+		<Layer level="BORDER">
+			<Texture name="$parentIconTexture" parentKey="icon">
+				<Anchors>
+					<Anchor point="TOPLEFT"/>
+					<Anchor point="BOTTOMRIGHT"/>
+				</Anchors>
+			</Texture>
+			<FontString name="$parentCaption" inherits="GameFontNormalSmall" justifyH="LEFT">
+				<Size x="20" y="20" />
+				<Anchors>
+					<Anchor point="TOPLEFT" />
+				</Anchors>
+			</FontString>
+		</Layer>
+	</Layers>
+	<NormalTexture name="$parentNormalTexture">
+		<Size x="20" y="20" />
+		<Anchors>
+			<Anchor point="CENTER" />
+		</Anchors>
+	</NormalTexture>
+</Button>
+
+<Button name="RAQFrameDataLineTemplate" virtual="true">
+	<Size>
+		<AbsDimension x="474" y="20" />
+	</Size>
+	<Layers>
+		<Layer level="ARTWORK">
+			<FontString name="$parentPlayer" inherits="GameFontNormalSmall" justifyH="LEFT">
+				<Size x="80" y="20" />
+				<Anchors>
+					<Anchor point="TOPLEFT" />
+				</Anchors>
+			</FontString>
+			<FontString name="$parentNeeded" inherits="GameFontNormalSmall" justifyH="LEFT">
+				<Size x="20" y="20" />
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentPlayer" relativePoint="TOPRIGHT" />
+				</Anchors>
+			</FontString>
+			<FontString name="$parentStatus" inherits="GameFontNormalSmall" justifyH="CENTER">
+				<Size x="100" y="20" />
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentNeeded" relativePoint="TOPRIGHT" />
+				</Anchors>
+			</FontString>
+		</Layer>
+	</Layers>
+</Button>
+
+<Frame name="RAQFrame" hidden="true" toplevel="true" parent="UIParent" enableMouse="true" movable="true">
+	<Size>
+		<AbsDimension x="520" y="410" />
+	</Size>
+	<Anchors>
+		<Anchor point="CENTER" />
+	</Anchors>
+	<Backdrop bgFile="Interface\CharacterFrame\UI-Party-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+		<BackgroundInsets>
+			<AbsInset left="11" right="11" top="11" bottom="11"/>
+		</BackgroundInsets>
+		<TileSize>
+			<AbsValue val="32" />
+		</TileSize>
+		<EdgeSize>
+			<AbsValue val="32"/>
+		</EdgeSize>
+	</Backdrop>
+	<Layers>
+		<Layer level="ARTWORK">
+			<Texture name="$parentHeader" file="Interface\DialogFrame\UI-DialogBox-Header">
+				<Size>
+					<AbsDimension x="276" y="64" />
+				</Size>
+				<Anchors>
+					<Anchor point="TOP">
+						<Offset>
+							<AbsDimension x="0" y="12" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Texture>
+			<FontString name="$parentTitleText" inherits="GameFontNormal">
+				<Size>
+					<AbsDimension x="276" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOP" relativeTo="$parentHeader">
+						<Offset>
+							<AbsDimension x="0" y="-12"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</FontString>
+			<FontString name="$parentDataTitleText" inherits="GameFontNormal" hidden="true">
+				<Size>
+					<AbsDimension x="276" y="22"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOP" relativeTo="$parent">
+						<Offset>
+							<AbsDimension x="0" y="-48"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</FontString>
+		</Layer>
+	</Layers>
+
+	<Frames>
+		<!-- close button -->
+		<Button name="$parentCloseButton" inherits="UIPanelCloseButton">
+			<Anchors>
+				<Anchor point="TOPRIGHT">
+					<Offset>
+						<AbsDimension x="-8" y="-8" />
+					</Offset>
+				</Anchor>
+			</Anchors>
+		</Button>
+		<Button name="$parentResetButton" inherits="UIPanelButtonTemplate" id="2" text="Reset">
+			<Size x="60" y="21" />
+			<Anchors>
+				<Anchor point="TOPRIGHT">
+					<Offset x="-35" y="-28" />
+				</Anchor>
+			</Anchors>
+			<Scripts>
+				<OnClick>
+					RAQ_HandleButton(self)
+				</OnClick>
+			</Scripts>
+		</Button>
+		<Button name="$parentScanButton" inherits="UIPanelButtonTemplate" id="1" text="Scan">
+			<Size x="60" y="21" />
+			<Anchors>
+				<Anchor point="TOPRIGHT" relativeTo="$parentResetButton" relativePoint="TOPLEFT">
+					<Offset x="0" y="0" />
+				</Anchor>
+			</Anchors>
+			<Scripts>
+				<OnClick>
+					RAQ_HandleButton(self)
+				</OnClick>
+			</Scripts>
+		</Button>
+
+		<Button name="$parentPrevPage" id="3" hidden="true">
+			<Size x="20" y="20" />
+			<Anchors>
+				<Anchor point="TOPLEFT" relativeTo="$parent">
+					<Offset x="80" y="-68" />
+				</Anchor>
+			</Anchors>
+			<Scripts>
+				<OnClick>
+					RAQ_HandleButton(self);
+				</OnClick>
+			</Scripts>
+			<NormalTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Up"/>
+			<PushedTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Down"/>
+			<DisabledTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Disabled"/>
+			<HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD"/>
+		</Button>
+		<Button name="$parentNextPage" id="4" hidden="true">
+			<Size x="20" y="20" />
+			<Anchors>
+				<Anchor point="TOPRIGHT" relativeTo="$parent">
+					<Offset x="-10" y="-68" />
+				</Anchor>
+			</Anchors>
+			<Scripts>
+				<OnClick>
+					RAQ_HandleButton(self);
+				</OnClick>
+			</Scripts>
+			<NormalTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Up"/>
+			<PushedTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Down"/>
+			<DisabledTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Disabled"/>
+			<HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD"/>
+		</Button>
+	</Frames>
+	<Scripts>
+		<OnLoad>
+			self:RegisterForDrag("LeftButton");
+		</OnLoad>
+		<OnDragStart>
+			self:StartMoving();
+		</OnDragStart>
+		<OnDragStop>
+			self:StopMovingOrSizing();
+		</OnDragStop>
+	</Scripts>
+</Frame>
+
+<Frame name="RAQCoreFrame" hidden="false">
+	<Size>
+		<AbsDimension x="10" y="10" />
+	</Size>
+	<Anchors>
+		<Anchor point="CENTER" />
+	</Anchors>
+	<Scripts>
+		<OnLoad>
+			RAQ_OnLoad(self);
+		</OnLoad>
+		<OnEvent>
+			RAQ_EventHandler(event);
+		</OnEvent>
+		
+		<OnUpdate function="RAQ_UpdateHandler" />
+	</Scripts>
+</Frame>
+
+</Ui>
