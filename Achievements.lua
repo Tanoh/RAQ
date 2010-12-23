@@ -219,6 +219,34 @@ function RAQ_Cataclysm_AddMetaAchievements()
 		[5504] = "", -- To the Ground!
 		[5505] = "", -- Bullet Time
 	}
+
+	RAQ_DB["_meta"]["Glory of the Cataclysm Raider"] = {
+		[5094] = "", -- Heroic: Magmaw
+		[5107] = "", -- Heroic: Omnotron Defense System
+		[5108] = "", -- Heroic: Maloriak
+		[5109] = "", -- Heroic: Atramedes
+		[5115] = "", -- Heroic: Chimaeron
+		[5116] = "", -- Heroic: Nefarian
+		[5118] = "", -- Heroic: Halfus Wyrmbreaker
+		[5117] = "", -- Heroic: Valiona and Theralion
+		[5119] = "", -- Heroic: Ascendant Council
+		[5120] = "", -- Heroic: Cho\'gall
+		[5122] = "", -- Heroic: Conclave of Wind
+		[5123] = "", -- Heroic: Al\'Akir
+		[5306] = "", -- Parasite Evening
+		[5307] = "", -- Achieve-a-tron
+		[5308] = "", -- Silence is Golden
+		[5309] = "", -- Full of Sound and Fury
+		[5310] = "", -- Aberrant Behavior
+		[4849] = "", -- Keeping it in the Family
+		[5300] = "", -- The Only Escape
+		[4852] = "", -- Double Dragon
+		[5311] = "", -- Elementary
+		[5312] = "", -- The Abyss Will Gaze Back Into You
+		[5304] = "", -- Stay Chill
+		[5305] = "", -- Four Play
+		[4853] = "", -- Glory of the Cataclysm Raider
+	}
 end
 
 
