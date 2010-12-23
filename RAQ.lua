@@ -9,8 +9,6 @@
 		aka Tanoh at Earthen Ring(EU)
 
 	FIXME:
-		* size25/size10 are not used anymore except in Wrath content.
-		* Instance Mode, like boss mode but lists all bosses in the instance.
 		* Fix the various FIXMEs.
 		* Localization on a lot of things
 		* Implement ignore list.
@@ -40,7 +38,8 @@ local RAQ_queue = {};
 local _RAQ_Timer = nil;
 local _unitID;
 
--- Tooltips for buttons currently only two but, hey you never know. :> First line is header, after that every line is added in white.
+-- Tooltips for buttons. Currently only two buttons using it, but hey you never
+-- know. :> First line is header (yellow), after that every line is added in white.
 RAQ_TOOLTIP = {
 	RAQFrameScanButton = "Scan\nScans your group for achievements, results are cached for "..RAQ_REFRESH_TIMEOUT.." seconds.\nHold |cffffff00CTRL|r to force a rescan.";
 	RAQFrameResetButton = "Reset\nClears all data collected.";
@@ -631,7 +630,7 @@ function RAQ_EventHandler(event)
 			RAQ_SetStatus(_unitName,"SUCCESS");
 			RAQ_DATA[_unitName]["_data"] = {};
 			i = 1;
-			for k in pairs(RAQ_DB["_scan"]) do
+			for k,v in pairs(RAQ_DB["_scan"]) do
 				completed = select(1,GetAchievementComparisonInfo(k));
 
 				-- For some reason this is needed
@@ -691,7 +690,6 @@ function RAQ_StatusReport(self,isPlayer,target)
 				for k,v in ipairs(data) do
 					if( RAQ_DATA[playerName]["_data"][v] == false ) then
 						name = select(2,GetAchievementInfo(v));
-						name = string.gsub(name, " %((%d+) player%)",""); -- FIXME: needs localization?
 						table.insert(out["incomplete"],name);
 					end
 					count = count + 1;
@@ -789,16 +787,29 @@ function RAQ_GetSelectedTable()
 	local temp = UIDropDownMenu_GetSelectedValue(RAQDropDown);
 
 	if( type(temp) == "table" ) then
-		-- FIXME: I'm sure this can be done better?
 		if( #temp == 2 ) then
-			return RAQ_DB[temp[1]][temp[2]];
+			-- Instance or meta
+			
+			-- Small hack to fix so you can click on a boss submenu and get to instance mode.
+			-- eg "_boss / Blackwing Descent" leads to "_instance / Blackwing Descent"
+			if( temp[1] == "_boss" ) then
+				temp[1] = "_instance";
+			end
+
+			local t = {};
+			for k,v in pairs(RAQ_DB[temp[1]][temp[2]]) do
+				if( k ~= "_meta" ) then
+					table.insert(t,k);
+				end
+			end
+			return t;
 		end
 		if( #temp == 3 ) then
+			-- Straight up boss, just return as it is.
 			return RAQ_DB[temp[1]][temp[2]][temp[3]];
 		end
-		if( #temp == 4 ) then
-			return RAQ_DB[temp[1]][temp[2]][temp[4]]["size"..temp[3]];
-		end
+		RAQ_Error("Unknown length of table ("..#temp..") in GetSelectedTable.");
+		return nil;
 	elseif( type(temp) == "string" ) then
 		return nil;
 	elseif( type(temp) ~= "nil" ) then
@@ -809,7 +820,7 @@ end
 function RAQ_HideAllDropDowns()
 	local i,frame;
 	-- Hides ALL the dropdown lists.
-	-- FIXME: Can this be done better, and not in this hackish way?
+	-- FIXME: Investigate if this can be done properly, and not in this hackish way.
 	i = 1;
 	repeat
 		frame = getglobal("DropDownList"..i);
@@ -848,6 +859,7 @@ function RAQ_CreateMainDropDown()
 
 		if( level == 1 ) then
 			table.insert(t,{ name = "Boss mode", key = "_boss" });
+			table.insert(t,{ name = "Instance mode", key = "_instance" });
 			table.insert(t,{ name = "Meta mode", key = "_meta" });
 			table.sort(t, function(a,b) return a.name < b.name end)
 
@@ -863,17 +875,13 @@ function RAQ_CreateMainDropDown()
 			end
 		end
 		
-		-- Meta or instances.
+		-- Meta/instances/boss.
 		if( level == 2 ) then
+			t = {};
 			for k,v in pairs(RAQ_DB[UIDROPDOWNMENU_MENU_VALUE]) do
-				if( UIDROPDOWNMENU_MENU_VALUE == "_boss" ) then
-					table.insert(t,{ name = k, size = 10 });
-					table.insert(t,{ name = k, size = 25 });
-				else
-					table.insert(t,{ name = k, size = nil });
-				end
+				table.insert(t,k);
 			end
-			table.sort(t, function(a,b) return a.name < b.name end)
+			table.sort(t);
 
 			local info = UIDropDownMenu_CreateInfo();
 			for i,v in ipairs(t) do
@@ -883,44 +891,38 @@ function RAQ_CreateMainDropDown()
 				if( UIDROPDOWNMENU_MENU_VALUE == "_boss" ) then
 					info.hasArrow = true;
 					info.notCheckable = true;
-					info.text = v.name.." ("..v.size.." player)";
-					table.insert(temp,"_boss");
-					table.insert(temp,v.name);
-					table.insert(temp,v.size);
 				else
 					info.hasArrow = false;
 					info.notCheckable = true;
-					info.text = v.name;
-					table.insert(temp,"_meta");
-					table.insert(temp,v.name);
 				end
+				info.text = v;
+				table.insert(temp,UIDROPDOWNMENU_MENU_VALUE);
+				table.insert(temp,v);
 				info.value = temp;
 				UIDropDownMenu_AddButton(info, level);
 			end
 		end
 		
-		-- Bosses in the selected instance
+		-- Bosses
 		if( level == 3 ) then
 			t = {};
 			local instance = UIDROPDOWNMENU_MENU_VALUE[2];
-			local size = UIDROPDOWNMENU_MENU_VALUE[3];
-			for k,v in pairs(RAQ_DB["_boss"][instance]) do
+			for k,v in pairs(RAQ_DB[UIDROPDOWNMENU_MENU_VALUE[1]][instance]) do
 				table.insert(t,k);
 			end
 			table.sort(t);
 
 			local info = UIDropDownMenu_CreateInfo();
-			for i,k in ipairs(t) do
+			for i,v in ipairs(t) do
 				info = UIDropDownMenu_CreateInfo();
 				info.func = OnClick;
 				info.hasArrow = false;
 				info.notCheckable = true;
-				info.text = k.." ("..size.." player)";
+				info.text = v;
 				local temp = {};
-				table.insert(temp,"_boss");
+				table.insert(temp,UIDROPDOWNMENU_MENU_VALUE[1]);
 				table.insert(temp,instance);
-				table.insert(temp,size);
-				table.insert(temp,k);
+				table.insert(temp,v);
 				info.value = temp;
 				UIDropDownMenu_AddButton(info, level);
 			end

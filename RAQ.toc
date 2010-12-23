@@ -3,5 +3,5 @@
 ## X-Email: jonas@fallman.org
 ## Title: Raid Achievement Query
 ## Notes: Scans your party/raid's progress in various PvE related achievements
-## Version: 2.1
+## Version: 2.2
 RAQ.xml
