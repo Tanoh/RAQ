@@ -651,6 +651,7 @@ function RAQ_StatusReport(self,isPlayer,target)
 	local out = {};
 	local targetTwo;
 	local count = 0;
+	local isRealID = false;
 
 	if( isPlayer == nil ) then
 		isPlayer = false;
@@ -659,6 +660,9 @@ function RAQ_StatusReport(self,isPlayer,target)
 	if( string.find(target,"CHANNEL|(%d+)") ) then
 		targetTwo = tonumber(select(3,string.find(target,"CHANNEL|(%d+)")));
 		target = "CHANNEL";
+	elseif( string.find(target,"REALID|(%d+)") ) then
+		isRealID = true;
+		target = tonumber(select(3,string.find(target,"REALID|(%d+)")));
 	elseif( target == "WHISPER" ) then
 		if( UnitName("target") == nil ) then
 			RAQ_Error("No target selected.");
@@ -705,13 +709,13 @@ function RAQ_StatusReport(self,isPlayer,target)
 					local temp = '';
 					for word in out:gmatch("%S+") do
 						if( string.len(temp..' '..word) >= maxLength ) then
-							SendChatMessage(temp,target,nil,targetTwo);
+							RAQ_SendMessage(temp, isRealID, target, targetTwo);
 							temp = '';
 						end
 						temp = temp .. word .. ' ';
 					end
 					if( temp ~= '' ) then
-						SendChatMessage(temp,target,nil,targetTwo);
+						RAQ_SendMessage(temp, isRealID, target, targetTwo);
 					end
 				end
 			else
@@ -742,13 +746,23 @@ function RAQ_StatusReport(self,isPlayer,target)
 
 		if( incomplete == "" ) then incomplete = "No one"; end
 
-		SendChatMessage("[RAQ] "..self.link..":",target,nil,targetTwo);
-		SendChatMessage(string.format("Needed by (%d of %d): %s",#out["incomplete"],count-#out["unknown"],incomplete),target,nil,targetTwo);
+		RAQ_SendMessage("[RAQ] "..self.link..":", isRealID, target, targetTwo);
+		RAQ_SendMessage(string.format("Needed by (%d of %d): %s",#out["incomplete"],count-#out["unknown"],incomplete), isRealID, target, targetTwo);
+		
 		if( unknown ~= "" ) then
-			SendChatMessage(string.format("Not scanned (%d): %s",#out["unknown"],unknown),target,nil,targetTwo);
+			RAQ_SendMessage(string.format("Not scanned (%d): %s",#out["unknown"],unknown), isRealID, target, targetTwo);
 		end
 	end
 end
+
+function RAQ_SendMessage(temp, isRealID, target, targetTwo)
+	if( isRealID ) then
+		BNSendWhisper(target, temp);
+	else
+		SendChatMessage(temp, target, nil, targetTwo);
+	end
+end
+
 
 function RAQ_HandleButton(self)
 	local buttonID = self:GetID();
@@ -947,7 +961,10 @@ end
 
 function RAQ_GetReportList()
 	local tbl = {};
-	
+	local first;
+
+	-- Normal targets.
+	table.insert(tbl,{ title = "Report to" });
 	table.insert(tbl,{ name = "Say", key = "SAY" });
 	if( GetNumPartyMembers() > 0 ) then
 		table.insert(tbl,{ name = "Party", key = "PARTY" });
@@ -960,12 +977,37 @@ function RAQ_GetReportList()
 		table.insert(tbl,{ name = "Battleground", key = "BATTLEGROUND" });
 	end
 
-	table.insert(tbl,{ name = "Guild", key = "GUILD" });
-	table.insert(tbl,{ name = "Officer", key = "OFFICER" });
+	-- Guild.
+	if( select(1,GetGuildInfo("player")) ~= nil ) then
+		table.insert(tbl,{ name = "Guild", key = "GUILD" });
+		table.insert(tbl,{ name = "Officer", key = "OFFICER" });
+	end
+	
+	-- Whisper target.
 	table.insert(tbl,{ name = "Whisper Target", key = "WHISPER" });
+	
+	-- Channels.
+	first = true;
 	for k,v in ipairs(RAQ_BuildChannelList(GetChannelList())) do
+		if( first ) then
+			table.insert(tbl,{ title = "Channels" });
+			first = false;
+		end
 		table.insert(tbl,v);
 	end
+
+	-- RealID.
+	first = true;
+	for i=1, select(2, BNGetNumFriends()) do
+		local id,realNameOne,realNameTwo,charName = BNGetFriendInfo(i);
+	
+		if( first ) then
+			table.insert(tbl,{ title = "Real ID friends" });
+			first = false;
+		end
+		table.insert(tbl, { name = realNameOne.." "..realNameTwo.." ("..charName..")", key = "REALID|"..id });
+	end
+
 	return tbl;
 end
 
@@ -983,28 +1025,32 @@ function RAQ_CreateHeaderContext()
 		level = level or 1;
 		if( RAQHeaderContextMenu.owner ~= nil ) then
 			if( level == 1 ) then
-				wipe(info);
-
-				info.isTitle = 1;
-				info.notCheckable = 1;
-				info.text = "Report to";
-				UIDropDownMenu_AddButton(info, level);
-
-				info.disabled = nil;
-				info.isTitle = nil;
 				local t = RAQ_GetReportList();
 				local info = UIDropDownMenu_CreateInfo();
 				for i,v in ipairs(t) do
 					info = UIDropDownMenu_CreateInfo();
 					info.notCheckable = 1;
-					info.func = OnClick;
-					info.text = v.name;
-					info.value = v.key;
+					if( v.title ) then
+						info.isTitle = true;
+						info.text = v.title;
+						info.value = nil;
+						info.func = nil;
+					else
+						info.isTitle = nil;
+						info.func = OnClick;
+						info.text = v.name;
+						info.value = v.key;
+					end
 					UIDropDownMenu_AddButton(info, level);
 				end
 
+				wipe(info);
+				info.notCheckable = 1;
+				UIDropDownMenu_AddButton(info, level);
+
 				info.text = CANCEL;
 				info.func = RAQ_HideAllDropDowns;
+				info.notCheckable = 1;
 				UIDropDownMenu_AddButton(info, level);
 			end
 		end
@@ -1064,10 +1110,19 @@ function RAQ_CreatePlayerContext()
 				local info = UIDropDownMenu_CreateInfo();
 				for i,v in ipairs(t) do
 					info = UIDropDownMenu_CreateInfo();
-					info.func = OnReportClick;
+
 					info.notCheckable = 1;
-					info.text = v.name;
-					info.value = v.key;
+					if( v.title ) then
+						info.isTitle = true;
+						info.text = v.title;
+						info.value = nil;
+						info.func = nil;
+					else
+						info.isTitle = nil;
+						info.func = OnReportClick;
+						info.text = v.name;
+						info.value = v.key;
+					end
 					UIDropDownMenu_AddButton(info, level);
 				end
 			end

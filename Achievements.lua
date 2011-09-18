@@ -8,6 +8,8 @@ function RAQ_InitAchievements()
 	-- Cataclysm
 	RAQ_Cataclysm_AddRaidTier1();
 	RAQ_Cataclysm_AddHeroics();
+	RAQ_Cataclysm_AddZandalari();
+	RAQ_Cataclysm_AddRaidTier2();
 
 
 	-- Cataclysm Meta
@@ -47,6 +49,28 @@ function RAQ_InitAchievements()
 			end
 		end
 	end
+end
+
+function RAQ_Cataclysm_AddZandalari()
+	-- Zul'Aman
+	RAQ_DB["_instance"]["Zul'Aman"] = {
+		["_meta"] = { instanceType = "party" },
+		[5750] = "", -- Tunnel Vision
+		[5760] = "", -- Ring Out!
+		[5761] = "", -- Hex Mix
+		[5769] = "", -- Heroic: Zul'Aman
+	}
+	
+	-- Zul'Gurub
+	RAQ_DB["_instance"]["Zul'Gurub"] = {
+		["_meta"] = { instanceType = "party" },
+		[5743] = "", -- It's Not Easy Being Green
+		[5744] = "", -- Gurubashi Headhunter
+		[5759] = "", -- Spirit Twister
+		[5762] = "", -- Ohganot So Fast!
+		[5765] = "", -- Here, Kitty Kitty...
+		[5768] = "", -- Heroic: Zul'Gurub
+	}
 end
 
 function RAQ_Cataclysm_AddHeroics()
@@ -174,6 +198,26 @@ function RAQ_Cataclysm_AddRaidTier1()
 
 end
 
+function RAQ_Cataclysm_AddRaidTier2()
+	-- Firelands
+	RAQ_DB["_instance"]["Firelands"] = {
+		["_meta"] = { instanceType = "raid" },
+
+		[5799] = "Majordomo Staghelm", -- Only the Penitent...
+		[5804] = "Majordomo Staghelm", -- Heroic: Majordomo Fandral Staghelm
+		[5805] = "Baleroc", -- Heroic: Baleroc
+		[5830] = "Baleroc", -- Share the Pain
+		[5806] = "Shannox", -- Heroic: Shannox
+		[5829] = "Shannox", -- Bucket List
+		[5807] = "Beth'tilac", -- Heroic: Beth'tilac
+		[5821] = "Beth'tilac", -- Death from Above
+		[5808] = "Lord Rhyolith", -- Heroic: Lord Rhyolith
+		[5810] = "Lord Rhyolith", -- Not an Ambi-Turner
+		[5809] = "Alysrazor", -- Heroic: Alysrazor
+		[5813] = "Alysrazor", -- Do a Barrel Roll!
+	}
+end
+
 function RAQ_Cataclysm_AddMetaAchievements()
 	RAQ_DB["_meta"]["Defender of a Shattered World"] = {
 		[5060] = "", -- Heroic: Blackrock Caverns
@@ -230,9 +274,9 @@ function RAQ_Cataclysm_AddMetaAchievements()
 		[5118] = "", -- Heroic: Halfus Wyrmbreaker
 		[5117] = "", -- Heroic: Valiona and Theralion
 		[5119] = "", -- Heroic: Ascendant Council
-		[5120] = "", -- Heroic: Cho\'gall
+		[5120] = "", -- Heroic: Cho'gall
 		[5122] = "", -- Heroic: Conclave of Wind
-		[5123] = "", -- Heroic: Al\'Akir
+		[5123] = "", -- Heroic: Al'Akir
 		[5306] = "", -- Parasite Evening
 		[5307] = "", -- Achieve-a-tron
 		[5308] = "", -- Silence is Golden
@@ -245,8 +289,24 @@ function RAQ_Cataclysm_AddMetaAchievements()
 		[5312] = "", -- The Abyss Will Gaze Back Into You
 		[5304] = "", -- Stay Chill
 		[5305] = "", -- Four Play
-		[4853] = "", -- Glory of the Cataclysm Raider
 	}
+
+	RAQ_DB["_meta"]["Glory of the Firelands Raider"] = {
+		[5821] = "", -- Death from Above
+		[5810] = "", -- Not an Ambi-Turner
+		[5813] = "", -- Do a Barrel Roll!
+		[5829] = "", -- Bucket List
+		[5830] = "", -- Share the Pain
+		[5799] = "", -- Only the Penitent...
+		[5807] = "", -- Heroic: Beth'tilac
+		[5808] = "", -- Heroic: Lord Rhyolith
+		[5806] = "", -- Heroic: Shannox
+		[5809] = "", -- Heroic: Alysrazor
+		[5805] = "", -- Heroic: Baleroc
+		[5804] = "", -- Heroic: Majordomo Fandral Staghelm
+	}
+
+
 end
 
 
