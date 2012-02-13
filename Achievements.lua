@@ -1,3 +1,8 @@
+--[[
+	Achievements tracked by RAQ.
+--]]
+
+
 function RAQ_InitAchievements()
 	RAQ_DB = {
 		["_boss"] = {},
@@ -10,6 +15,7 @@ function RAQ_InitAchievements()
 	RAQ_Cataclysm_AddHeroics();
 	RAQ_Cataclysm_AddZandalari();
 	RAQ_Cataclysm_AddRaidTier2();
+	RAQ_Cataclysm_AddRaidTier3();
 
 
 	-- Cataclysm Meta
@@ -136,6 +142,26 @@ function RAQ_Cataclysm_AddHeroics()
 		[5504] = "", -- To the Ground!
 		[5505] = "", -- Bullet Time
 	}
+	
+	RAQ_DB["_instance"]["Hour of Twilight"] = {
+		["_meta"] = { instanceType = "party" },
+		[6119] = "", -- Heroic: Hour of Twilight
+		[6132] = "", -- Eclipse
+	}
+
+	RAQ_DB["_instance"]["End Time"] = {
+		["_meta"] = { instanceType = "party" },
+		[6117] = "", -- Heroic: End Time
+		[5995] = "", -- Moon Guard
+		[6130] = "", -- Severed Ties
+	}
+
+	RAQ_DB["_instance"]["Well of Eternity"] = {
+		["_meta"] = { instanceType = "party" },
+		[6118] = "", -- Heroic: Well of Eternity
+		[6070] = "", -- That's Not Cannon!
+		[6127] = "", -- Lazy Eye
+	}
 end
 
 function RAQ_Cataclysm_AddRaidTier1()
@@ -217,6 +243,44 @@ function RAQ_Cataclysm_AddRaidTier2()
 		[5813] = "Alysrazor", -- Do a Barrel Roll!
 	}
 end
+
+function RAQ_Cataclysm_AddRaidTier3()
+	-- Dragon Soul
+	RAQ_DB["_instance"]["Dragon Soul"] = {
+		["_meta"] = { instanceType = "raid" },
+
+		[6107] = "", -- Fall of Deathwing
+
+		[6174] = "Morchok", -- Don't Stand So Close to Me
+		[6109] = "Morchok", -- Heroic: Morchok
+		
+		[6129] = "Yor'sahj the Unsleeping", -- Taste the Rainbow!
+		[6111] = "Yor'sahj the Unsleeping", -- Heroic: Yor'sahj the Unsleeping
+		
+		[6128] = "Warlord Zon'ozz", -- Ping Pong Champion
+		[6110] = "Warlord Zon'ozz", -- Heroic: Warlord Zon'ozz
+		
+		[6175] = "Hagara the Stormbinder", -- Holding Hands
+		[6112] = "Hagara the Stormbinder", -- Heroic: Hagara the Stormbinder
+		
+		[6084] = "Ultraxio", -- Minutes to Midnight
+		[6113] = "Ultraxion", -- Heroic: Ultraxion
+		
+		[6105] = "Warmaster Blackhorn", -- Deck Defender
+		[6114] = "Warmaster Blackhorn", -- Heroic: Warmaster Blackhorn
+		
+		[6133] = "Spine of Deathwing", -- Maybe He'll Get Dizzy...
+		[6115] = "Spine of Deathwing", -- Heroic: Spine of Deathwing
+		
+		[6180] = "Deathwing", -- Chromatic Champion
+		[6116] = "Madness of Deathwing", -- Heroic: Madness of Deathwing
+
+		[6106] = "", -- Siege of Wyrmrest Temple
+		[6177] = "", -- Destroyer's End
+		[6107] = "", -- Fall of Deathwing
+	}
+end
+
 
 function RAQ_Cataclysm_AddMetaAchievements()
 	RAQ_DB["_meta"]["Defender of a Shattered World"] = {
@@ -306,6 +370,24 @@ function RAQ_Cataclysm_AddMetaAchievements()
 		[5804] = "", -- Heroic: Majordomo Fandral Staghelm
 	}
 
+	RAQ_DB["_meta"]["Glory of the Dragon Soul Raider"] = {
+		[6174] = "", -- Don't Stand So Close to Me 
+		[6129] = "", -- Taste the Rainbow! 
+		[6128] = "", -- Ping Pong Champion 
+		[6175] = "", -- Holding Hands 
+		[6084] = "", -- Minutes to Midnight 
+		[6105] = "", -- Deck Defender 
+		[6133] = "", -- Maybe He'll Get Dizzy... 
+		[6180] = "", -- Chromatic Champion 
+		[6110] = "", -- Heroic: Warlord Zon'ozz 
+		[6109] = "", -- Heroic: Morchok 
+		[6111] = "", -- Heroic: Yor'sahj the Unsleeping 
+		[6112] = "", -- Heroic: Hagara the Stormbinder 
+		[6113] = "", -- Heroic: Ultraxion 
+		[6114] = "", -- Heroic: Warmaster Blackhorn 
+		[6115] = "", -- Heroic: Spine of Deathwing 
+		[6116] = "", -- Heroic: Madness of Deathwing 
+	}
 
 end
 
