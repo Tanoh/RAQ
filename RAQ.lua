@@ -3,7 +3,7 @@
 	[R]aid [A]chievement [Q]uery
 	============================
 
-	Useage: /raq
+	Usage: /raq
 
 	Written by: Jonas Fällman <jonas@fallman.org>
 		aka Tanoh at Earthen Ring(EU)
@@ -12,259 +12,282 @@
 		* Fix the various FIXMEs.
 		* Localization on a lot of things
 		* Implement ignore list.
+		* Scenarios are a bit of a hack. It should probably be a mode,
+		  but that doesn't make a whole lot of sense when there is only
+		  one category.
+
 --]]
 
 
-RAQ_DEBUG = false;
+RAQ_DEBUG = false
 RAQ_SCAN_TIMEOUT = 3; -- Timeout in seconds for the scanner.
 RAQ_REFRESH_TIMEOUT = 60*60; -- Timeout in seconds before a re-scan.
-RAQ_DB = {};
-RAQ_DATA = {};
+RAQ_DB = {}
+RAQ_OPTION = {}
+RAQ_DATA = {}
 
 -- Internal values, should not be messed with! :>
-local RAQ_NUMBER_BUTTON = 14;
-local RAQ_NUMBER_COLUMN = 17;
-local RAQ_UPDATE_INTERVAL = 1.0;
-local RAQ_CURRENT_PAGE = 1;
+local RAQ_NUMBER_BUTTON = 14
+local RAQ_NUMBER_COLUMN = 17
+local RAQ_UPDATE_INTERVAL = 1.0
+local RAQ_CURRENT_PAGE = 1
 
 local RAQ_TEXTURE = {
 	["yes"] = [[Interface\AddOns\RAQ\media\true]],
 	["no"] = [[Interface\AddOns\RAQ\media\false]],
-};
 
-local RAQ_NUM_SCAN;
-local RAQ_SCAN_FAILED = "Scan failed";
-local RAQ_queue = {};
-local _RAQ_Timer = nil;
-local _unitID;
+	["unknown"] = [[Interface\ICONS\INV_Misc_QuestionMark.png]],
+}
+
+local RAQ_NUM_SCAN
+local RAQ_SCAN_FAILED = "Scan failed"
+local RAQ_queue = {}
+local _RAQ_Timer = nil
+local _unitID
 
 -- Tooltips for buttons. Currently only two buttons using it, but hey you never
 -- know. :> First line is header (yellow), after that every line is added in white.
 RAQ_TOOLTIP = {
-	RAQFrameScanButton = "Scan\nScans your group for achievements, results are cached for "..RAQ_REFRESH_TIMEOUT.." seconds.\nHold |cffffff00CTRL|r to force a rescan.";
-	RAQFrameResetButton = "Reset\nClears all data collected.";
+	RAQFrameScanButton = "Scan\nScans your group for achievements, results are cached for "..RAQ_REFRESH_TIMEOUT.." seconds.\nHold |cffffff00CTRL|r to force a rescan.",
+	RAQFrameResetButton = "Reset\nClears all data collected."
 }
 
 
 
+
 function RAQ_SetTimer(timeout,callback)
-	_RAQ_Timer = {};
+	_RAQ_Timer = {}
 	_RAQ_Timer = {
 		["timeout"] = timeout,
 		["callback"] = callback,
-	};
+	}
 end
 
 function RAQ_KillTimer()
-	_RAQ_Timer = nil;
+	_RAQ_Timer = nil
 end
 
 function RAQ_UpdateHeaderTooltip(self)
 	if( self.criteriaName ~= nil ) then
-		GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT");
-		GameTooltip:AddLine(self.criteriaName);
-		GameTooltip:AddLine(self.criteriaDesc, 1, 1, 1, 1);
+		GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT")
+		GameTooltip:AddLine(self.criteriaName)
+		GameTooltip:AddLine(self.criteriaDesc, 1, 1, 1, 1)
 		if( RAQ_DEBUG == true ) then
-			GameTooltip:AddLine("ID: "..self.achievementID);
+			GameTooltip:AddLine("ID: "..self.achievementID)
 		end
-		GameTooltip:SetMinimumWidth(100);
-		GameTooltip:Show();
+		GameTooltip:SetMinimumWidth(100)
+		GameTooltip:Show()
 	else
-		GameTooltip:Hide();
+		GameTooltip:Hide()
 	end
 end
 
 function RAQ_HideTooltip(self)
-	GameTooltip:Hide();
+	GameTooltip:Hide()
 end
 
 function RAQ_UpdateButtonTooltip(self)
-	GameTooltip:SetOwner(self, "ANCHOR_BOTTOMRIGHT");
-	local temp = RAQ_TOOLTIP[self:GetName()];
+	GameTooltip:SetOwner(self, "ANCHOR_BOTTOMRIGHT")
+	local temp = RAQ_TOOLTIP[self:GetName()]
 
 	if( temp == nil ) then
 		if( RAQ_DEBUG ) then
-			GameTooltip:AddLine("RAQ");
-			GameTooltip:AddLine("No tooltip defined for '"..self:GetName().."'", 1, 1, 1, true);
+			GameTooltip:AddLine("RAQ")
+			GameTooltip:AddLine("No tooltip defined for '"..self:GetName().."'", 1, 1, 1, true)
 		else
-			return;
+			return
 		end
 	else
-		local tbl = {};
+		local tbl = {}
 		repeat
-			nextPos = string.find(temp,"\n");
+			nextPos = string.find(temp,"\n")
 			if( nextPos ~= nil ) then
-				table.insert(tbl,strsub(temp,1,nextPos-1));
-				temp = strsub(temp,nextPos+1);
+				table.insert(tbl,strsub(temp,1,nextPos-1))
+				temp = strsub(temp,nextPos+1)
 			end
-		until( nextPos == nil );
+		until( nextPos == nil )
 		if( temp ~= "" ) then
-			table.insert(tbl,temp);
+			table.insert(tbl,temp)
 		end
 
 		for k,v in ipairs(tbl) do
 			if( k == 1 ) then
-				GameTooltip:AddLine(v);
+				GameTooltip:AddLine(v)
 			else
-				GameTooltip:AddLine(v, 1, 1, 1, true);
+				GameTooltip:AddLine(v, 1, 1, 1, true)
 			end
 		end
 	end
-	GameTooltip:SetMinimumWidth(100);
-	GameTooltip:Show();
+	GameTooltip:SetMinimumWidth(100)
+	GameTooltip:Show()
 end
 
 function RAQ_Error(msg)
-	print("|cff00ff00RAQ|r: "..msg);
+	print("|cffff0000[RAQ]|r: "..msg)
 end
 
 function RAQ_UpdateHeader()
-	local i,col,last,j,texture,name,temp,desc;
+	local i,col,last,j,texture,name,temp,desc
 
-	local data = RAQ_GetSelectedTable();
+	local data = RAQ_GetSelectedTable()
 	if( data == nil ) then
 		return
 	end
 
 	-- Hide everything
 	for i=1,RAQ_NUMBER_COLUMN do
-		getglobal("RAQFrameDataHeaderColumn"..i):Hide();
-		getglobal("RAQFrameDataNeededColumn"..i.."Caption"):SetText("");
+		getglobal("RAQFrameDataHeaderColumn"..i):Hide()
+		getglobal("RAQFrameDataNeededColumn"..i.."Caption"):SetText("")
 		for j=1,RAQ_NUMBER_BUTTON do
-			getglobal("RAQFrameDataLine"..j.."Column"..i):Hide();
-			getglobal("RAQFrameDataLine"..j.."Status"):SetText("");
+			getglobal("RAQFrameDataLine"..j.."Column"..i):Hide()
+			getglobal("RAQFrameDataLine"..j.."Status"):SetText("")
 		end
 	end
 
-	getglobal("RAQFrameDataNeededPlayer"):Show();
+	getglobal("RAQFrameDataNeededPlayer"):Show()
 
 	-- Populate header with texture and achievement info
-	last = 0;
-	offset = (RAQ_CURRENT_PAGE-1) * RAQ_NUMBER_COLUMN;
+	last = 0
+	offset = (RAQ_CURRENT_PAGE-1) * RAQ_NUMBER_COLUMN
 
 	for i=1,RAQ_NUMBER_COLUMN do
-		j = i + offset;
+		j = i + offset
 		if( j <= #data ) then
-			col = getglobal("RAQFrameDataHeaderColumn"..i);
-			col.achievementID = data[j];
+			col = getglobal("RAQFrameDataHeaderColumn"..i)
+			col.achievementID = data[j]
 
-			texture = select(10,GetAchievementInfo(col.achievementID));
-			name = select(2,GetAchievementInfo(col.achievementID));
-			desc = select(8,GetAchievementInfo(col.achievementID));
+			texture = select(10,GetAchievementInfo(col.achievementID))
+			name = select(2,GetAchievementInfo(col.achievementID))
+			desc = select(8,GetAchievementInfo(col.achievementID))
+			
+			if( texture == nil ) then
+				texture = RAQ_TEXTURE["unknown"]
+			end
+			if( name == nil ) then
+				name = "id#" .. col.achievementID
+			end
+			if( desc == nil ) then
+				desc = "<no info available>"
+			end
 
-			col.criteriaName = name;
-			col.criteriaDesc = desc;
-			col.link = GetAchievementLink(col.achievementID);
+			col.criteriaName = name
+			col.criteriaDesc = desc
+			col.link = GetAchievementLink(col.achievementID)
 
-			col:SetNormalTexture(texture);
-			col:Show();
+			col:SetNormalTexture(texture)
+			col:Show()
 		end
 	end
 
 	-- Reanchor the next and prev buttons.
-	local temp = getglobal("RAQFramePrevPage");
-	temp:ClearAllPoints();
-	temp:SetPoint("BOTTOMLEFT", getglobal("RAQFrameDataHeaderColumn1"), "TOPLEFT", 0, 0 );
-	temp:Show();
+	local temp = getglobal("RAQFramePrevPage")
+	temp:ClearAllPoints()
+	temp:SetPoint("BOTTOMLEFT", getglobal("RAQFrameDataHeaderColumn1"), "TOPLEFT", 0, 0 )
+	temp:Show()
 	if( RAQ_CURRENT_PAGE > 1 ) then
-		temp:Enable();
+		temp:Enable()
 	else
-		temp:Disable();
+		temp:Disable()
 	end
 
-	temp = getglobal("RAQFrameNextPage");
-	temp:ClearAllPoints();
-	temp:SetPoint("BOTTOMRIGHT", getglobal("RAQFrameDataHeaderColumn"..(RAQ_NUMBER_COLUMN)), "TOPRIGHT", 0, 0 );
-	temp:Show();
+	temp = getglobal("RAQFrameNextPage")
+	temp:ClearAllPoints()
+	temp:SetPoint("BOTTOMRIGHT", getglobal("RAQFrameDataHeaderColumn"..(RAQ_NUMBER_COLUMN)), "TOPRIGHT", 0, 0 )
+	temp:Show()
 	if( (offset+RAQ_NUMBER_COLUMN) >= #data ) then
-		temp:Disable();
+		temp:Disable()
 	else
-		temp:Enable();
+		temp:Enable()
 	end
-	
+
 	-- Set title text and anchors
-	temp = getglobal("RAQFrameDataTitleText");
-	temp:ClearAllPoints();
-	temp:SetPoint("BOTTOMLEFT", "RAQFrameDataHeaderColumn1", "TOPLEFT", 0, 0 );
-	temp:SetPoint("TOPRIGHT", getglobal("RAQFrameDataHeaderColumn"..(RAQ_NUMBER_COLUMN)), "TOPRIGHT", 0, 16 );
-	
-	local name = UIDropDownMenu_GetSelectedValue(RAQDropDown);
-	temp:SetText(name[#name]);
-	temp:Show();
+	temp = getglobal("RAQFrameDataTitleText")
+	temp:ClearAllPoints()
+	temp:SetPoint("BOTTOMLEFT", "RAQFrameDataHeaderColumn1", "TOPLEFT", 0, 0 )
+	temp:SetPoint("TOPRIGHT", getglobal("RAQFrameDataHeaderColumn"..(RAQ_NUMBER_COLUMN)), "TOPRIGHT", 0, 16 )
+
+	local val = UIDropDownMenu_GetSelectedValue(RAQDropDown)
+	temp:SetText(val[#val])
+	temp:Show()
 
 	-- Enable scan/clear buttons.
-	getglobal("RAQFrameScanButton"):Enable();
-	getglobal("RAQFrameResetButton"):Enable();
+	getglobal("RAQFrameScanButton"):Enable()
+	getglobal("RAQFrameResetButton"):Enable()
 end
 
 function RAQ_AddFakeUser(name)
-	local completed;
+	local completed
 
 	if( name == nil or name == "" ) then
 		-- FIXME: Should be a randomized name
-		name = "Fake "..date("%H:%M:%S");
+		name = "Fake "..date("%H:%M:%S")
 	end
-	
+
 	if( math.random(20) == 1 ) then
-		RAQ_SetStatus(name,"TIMEOUT");
+		RAQ_SetStatus(name,"TIMEOUT")
 	else
-		RAQ_SetStatus(name,"SUCCESS");
-		RAQ_DATA[name]["_data"] = {};
+		RAQ_SetStatus(name,"SUCCESS")
+		RAQ_DATA[name]["_data"] = {}
 		for k in pairs(RAQ_DB["_scan"]) do
 			if( math.random(5) ~= 1 ) then
-				completed = true;
+				completed = true
 			else
-				completed = false;
+				completed = false
 			end
-			RAQ_DATA[name]["_data"][k] = completed;
+			RAQ_DATA[name]["_data"][k] = completed
 		end
 	end
 end
 
 -- Debug function to fake data
 function RAQ_FakeData()
-	local i,name;
+	local i,name
 
 	for i=1,(25-#RAQ_queue) do
-		name = "Fake#"..i;
-		RAQ_AddFakeUser(name);
+		name = "Fake#"..i
+		RAQ_AddFakeUser(name)
 	end
 end
 
-function RAQ_StartScan(mode)
-	local prefix,count,addThis,unitName,scanList,scanTemp;
-
-	if( mode == nil or mode == "" ) then
-		mode = "refresh";
-	end
-
-	RAQ_UpdateHeader();
-
-	RAQ_queue = {};
-	scanList = {};
-	scanTemp = {};
-
-	if( GetNumRaidMembers() <= 5 and not UnitInRaid("player") ) then
-		table.insert(scanList,"player");
-		for i=1,GetNumPartyMembers() do
-			table.insert(scanList,"party"..i);
+function RAQ_CreateScanList()
+	local list = {}
+	local num = GetNumGroupMembers()
+	if( IsInRaid() ) then
+		for i=1,num do
+			table.insert(list,"raid"..i)
 		end
 	else
-		for i=1,GetNumRaidMembers() do
-			table.insert(scanList,"raid"..i);
+		table.insert(list,"player")
+		for i=1,num do
+			table.insert(list,"party"..i)
 		end
 	end
+	return list
+end
+
+function RAQ_StartScan(mode)
+	local prefix,count,addThis,unitName,scanList,scanTemp
+
+	if( mode == nil or mode == "" ) then
+		mode = "refresh"
+	end
+
+	RAQ_UpdateHeader()
+
+	RAQ_queue = {}
+	scanTemp = {}
+	scanList = RAQ_CreateScanList()
 
 	for i,v in ipairs(scanList) do
-		unitName = UnitName(v);
-		addThis = true;
-		scanTemp[unitName] = 1;
+		unitName = UnitName(v)
+		addThis = true
+		scanTemp[unitName] = 1
 
 		if( mode == "refresh" ) then
 			-- Only rescan people with incomplete or old data.
 			if( RAQ_DATA[unitName] ~= nil ) then
 				if( RAQ_DATA[unitName]["_status"] == "SUCCESS" and difftime(time(),RAQ_DATA[unitName]["_scanTime"]) < RAQ_REFRESH_TIMEOUT ) then
-					addThis = false;
+					addThis = false
 				end
 			end
 		end
@@ -274,860 +297,1297 @@ function RAQ_StartScan(mode)
 			table.insert(RAQ_queue, {
 				unitid = v,
 				name = unitName,
-			});
+			})
 		end
 	end
 
 	-- Remove people no longer in the party/raid
 	for k,v in pairs(RAQ_DATA) do
 		if( scanTemp[k] == nil ) then
-			RAQ_DATA[k] = nil;
+			RAQ_DATA[k] = nil
 		end
 	end
 
-	RAQ_NUM_SCAN = #RAQ_queue;
-	RAQ_RunQueue();
+	RAQ_NUM_SCAN = #RAQ_queue
+	RAQ_RunQueue()
 end
 
 function RAQ_RescanPlayer(name)
-	local i,v,unitName,found;
-	local scanList = {};
+	local i,v,unitName,found
 
-	RAQ_queue = {};
+	RAQ_queue = {}
 
-	-- Various inspect thingies requires unitID, not unitName :(
-	if( GetNumRaidMembers() <= 5 and not UnitInRaid("player") ) then
-		table.insert(scanList,"player");
-		for i=1,GetNumPartyMembers() do
-			table.insert(scanList,"party"..i);
-		end
-	else
-		for i=1,GetNumRaidMembers() do
-			table.insert(scanList,"raid"..i);
-		end
-	end
-
-	found = false;
+	-- Various inspect thingies requires unitID, not unitName. So need to translate.
+	local scanList = RAQ_CreateScanList()
+	found = false
 	for i,v in ipairs(scanList) do
-		unitName = UnitName(v);
+		unitName = UnitName(v)
 		if( unitName == name ) then
 			table.insert(RAQ_queue, {
 				unitid = v,
 				name = unitName,
-			});
-			found = true;
+			})
+			found = true
 		end
 	end
 	if( found ) then
-		RAQ_NUM_SCAN = #RAQ_queue;
-		RAQ_RunQueue();
+		RAQ_NUM_SCAN = #RAQ_queue
+		RAQ_RunQueue()
 	end
 end
 
 function RAQ_UpdateProgress()
-	local header = getglobal("RAQFrameDataHeaderPlayer");
+	local header = getglobal("RAQFrameDataHeaderPlayer")
 	if( #RAQ_queue > 0 ) then
-		header:SetText(string.format("Scaning: %d/%d",(RAQ_NUM_SCAN-#RAQ_queue),RAQ_NUM_SCAN));
+		header:SetText(string.format("Scaning: %d/%d",(RAQ_NUM_SCAN-#RAQ_queue),RAQ_NUM_SCAN))
 	else
-		header:SetText("");
+		header:SetText("")
 	end
 end
 
 function RAQ_SetStatus(unit, status)
 	if( RAQ_DATA[unit] == nil ) then
-		RAQ_DATA[unit] = {};
+		RAQ_DATA[unit] = {}
 	end
-	RAQ_DATA[unit]["_status"] = status;
-	RAQ_DATA[unit]["_scanTime"] = time();
+	RAQ_DATA[unit]["_status"] = status
+	RAQ_DATA[unit]["_scanTime"] = time()
 end
 
 function RAQ_RunQueue()
-	local nextID = next(RAQ_queue);
+	local nextID = next(RAQ_queue)
 
-	RAQ_UpdateProgress();
+	RAQ_UpdateProgress()
 	if( nextID ~= nil ) then
 		if( SetAchievementComparisonUnit(RAQ_queue[nextID].unitid) ) then
-			_unitID = RAQ_queue[nextID].unitid;
-			_unitName = RAQ_queue[nextID].name;
+			_unitID = RAQ_queue[nextID].unitid
+			_unitName = RAQ_queue[nextID].name
 			RAQ_SetTimer(RAQ_SCAN_TIMEOUT,
 				function()
-					ClearAchievementComparisonUnit();
-					RAQ_SetStatus(_unitName,"TIMEOUT");
-					RAQ_RunQueue();
-				end);
+					ClearAchievementComparisonUnit()
+					RAQ_SetStatus(_unitName,"TIMEOUT")
+					RAQ_RunQueue()
+				end)
 		else
-			RAQ_Error("Failed to SetAchievementComparisonUnit("..RAQ_queue[nextID]..").");
+			RAQ_Error("Failed to SetAchievementComparisonUnit("..RAQ_queue[nextID]..").")
 		end
-		table.remove(RAQ_queue,nextID);
+		table.remove(RAQ_queue,nextID)
 	else
-		RAQ_KillTimer();
+		RAQ_KillTimer()
 	end
-	RAQ_UpdateUIList();
+	RAQ_UpdateUIList()
 end
 
 function RAQ_UpdateUIList()
-	local j,texture,xoffset,yoffset,who,needed,data;
-	sorted = {};
+	local j,texture,xoffset,yoffset,who,needed,data
+	sorted = {}
 
 	for k,v in pairs(RAQ_DATA) do
-		table.insert(sorted,k);
+		table.insert(sorted,k)
 	end
-	table.sort(sorted);
+	table.sort(sorted)
 
-	data = RAQ_GetSelectedTable();
+	data = RAQ_GetSelectedTable()
 	if( data ~= nil ) then
-		xoffset = (RAQ_CURRENT_PAGE-1) * RAQ_NUMBER_COLUMN;
-		FauxScrollFrame_Update(RAQFrameScrollList,#sorted,RAQ_NUMBER_BUTTON,22);
-		yoffset = FauxScrollFrame_GetOffset(RAQFrameScrollList);
+		xoffset = (RAQ_CURRENT_PAGE-1) * RAQ_NUMBER_COLUMN
+		FauxScrollFrame_Update(RAQFrameScrollList,#sorted,RAQ_NUMBER_BUTTON,22)
+		yoffset = FauxScrollFrame_GetOffset(RAQFrameScrollList)
 
 		for k=1,RAQ_NUMBER_BUTTON do
 			if( k+yoffset <= #sorted ) then
-				who = sorted[k+yoffset];
-				getglobal("RAQFrameDataLine"..k.."Player"):SetText(who);
+				who = sorted[k+yoffset]
+				getglobal("RAQFrameDataLine"..k.."Player"):SetText(who)
 				if( RAQ_DATA[who]["_status"] == "SUCCESS" ) then
-					getglobal("RAQFrameDataLine"..k.."Status"):SetText("");
+					getglobal("RAQFrameDataLine"..k.."Status"):SetText("")
 					for j=1,RAQ_NUMBER_COLUMN do
-						j2 = j + xoffset;
+						j2 = j + xoffset
 						if( j2 <= #data ) then
 							if( RAQ_DATA[who]["_data"][data[j2]] == true ) then
-								texture = RAQ_TEXTURE["yes"];
+								texture = RAQ_TEXTURE["yes"]
 							else
-								texture = RAQ_TEXTURE["no"];
+								texture = RAQ_TEXTURE["no"]
 							end
-							getglobal("RAQFrameDataLine"..k.."Column"..j):SetNormalTexture(texture);
-							getglobal("RAQFrameDataLine"..k.."Column"..j):Show();
+							getglobal("RAQFrameDataLine"..k.."Column"..j):SetNormalTexture(texture)
+							getglobal("RAQFrameDataLine"..k.."Column"..j):Show()
 						else
-							getglobal("RAQFrameDataLine"..k.."Column"..j):Hide();
+							getglobal("RAQFrameDataLine"..k.."Column"..j):Hide()
 						end
-						j = j + 1;
+						j = j + 1
 					end
 
 					-- Count needed
-					needed = 0;
+					needed = 0
 					for k2,v2 in pairs(data) do
 						if( RAQ_DATA[who]["_data"][v2] == false ) then
-							needed = needed + 1;
+							needed = needed + 1
 						end
 					end
-					getglobal("RAQFrameDataLine"..k.."Needed"):SetText(needed);
+					getglobal("RAQFrameDataLine"..k.."Needed"):SetText(needed)
 				else
-					local status = getglobal("RAQFrameDataLine"..k.."Status");
-					local width;
+					local status = getglobal("RAQFrameDataLine"..k.."Status")
+					local width
 
 					if( #data > RAQ_NUMBER_COLUMN ) then
-						width = RAQ_NUMBER_COLUMN * 22;
+						width = RAQ_NUMBER_COLUMN * 22
 					else
-						width = #data * 22;
+						width = #data * 22
 					end
-					status:SetWidth(width);
-					status:SetText(RAQ_SCAN_FAILED);
-					status:Show();
+					status:SetWidth(width)
+					status:SetText(RAQ_SCAN_FAILED)
+					status:Show()
 					for j=1,RAQ_NUMBER_COLUMN do
-						getglobal("RAQFrameDataLine"..k.."Column"..j):Hide();
+						getglobal("RAQFrameDataLine"..k.."Column"..j):Hide()
 					end
-					getglobal("RAQFrameDataLine"..k.."Needed"):SetText("");
+					getglobal("RAQFrameDataLine"..k.."Needed"):SetText("")
 				end
 			else
-				getglobal("RAQFrameDataLine"..k.."Player"):SetText("");
-				getglobal("RAQFrameDataLine"..k.."Status"):SetText("");
-				getglobal("RAQFrameDataLine"..k.."Needed"):SetText("");
+				getglobal("RAQFrameDataLine"..k.."Player"):SetText("")
+				getglobal("RAQFrameDataLine"..k.."Status"):SetText("")
+				getglobal("RAQFrameDataLine"..k.."Needed"):SetText("")
 				for j=1,RAQ_NUMBER_COLUMN do
-					getglobal("RAQFrameDataLine"..k.."Column"..j):Hide();
+					getglobal("RAQFrameDataLine"..k.."Column"..j):Hide()
 				end
 			end
 		end
 
 		-- Update needed column
-		local column,needed;
+		local column,needed
 		for j=1,RAQ_NUMBER_COLUMN do
-			column = getglobal("RAQFrameDataNeededColumn"..j.."Caption");
-			j2 = j + xoffset;
+			column = getglobal("RAQFrameDataNeededColumn"..j.."Caption")
+			j2 = j + xoffset
 			if( data ~= nil and j2 <= #data ) then
-				needed = 0;
+				needed = 0
 				for k,v in pairs(RAQ_DATA) do
 					if( v["_status"] == "SUCCESS" ) then
 						if( v["_data"][data[j2]] ~= true ) then
-							needed = needed + 1;
+							needed = needed + 1
 						end
 					end
 				end
-				column:SetText(needed);
+				column:SetText(needed)
 			else
-				column:SetText("");
+				column:SetText("")
 			end
 		end
 	end
 end
 
 function RAQ_ShowPlayerContextMenu(self)
-	RAQPlayerContextMenu.owner = self:GetName();
-	ToggleDropDownMenu(1, nil, RAQPlayerContextMenu, "cursor");
+	RAQPlayerContextMenu.owner = self:GetName()
+	ToggleDropDownMenu(1, nil, RAQPlayerContextMenu, "cursor")
 end
 
 function RAQ_ShowHeaderContextMenu(self)
-	RAQHeaderContextMenu.owner = self:GetName();
-	ToggleDropDownMenu(1, nil, RAQHeaderContextMenu, "cursor");
+	RAQHeaderContextMenu.owner = self:GetName()
+	ToggleDropDownMenu(1, nil, RAQHeaderContextMenu, "cursor")
 end
 
 function RAQ_OnLoad(self)
-	local tempFrame,theFrame,tempPlayer;
+	local tempFrame,theFrame,tempPlayer
 
-	self:RegisterEvent("INSPECT_ACHIEVEMENT_READY");
+	self:RegisterEvent("INSPECT_ACHIEVEMENT_READY")
+	self:RegisterEvent("ADDON_LOADED")
+			
+	RAQ_OPTION = {
+		["expansion"] = {},
+		["category"] = {},
+		["_meta"] = {},
+	}
+	RAQ_OPTION["_meta"]["firstTime"] = true
 
-	getglobal("RAQFrameTitleText"):SetText("RAQ version "..GetAddOnMetadata("RAQ", "Version"));
+	getglobal("RAQFrameTitleText"):SetText("RAQ version "..GetAddOnMetadata("RAQ", "Version"))
 
-	RAQ_InitAchievements();
+	-- Global achievements DB init.
+	RAQ_InitAchievements()
 
-	tempFrame = getglobal("RAQFrameScanButton");
-	tempFrame:SetScript("OnEnter", RAQ_UpdateButtonTooltip);
-	tempFrame:SetScript("OnLeave", RAQ_HideTooltip);
-	tempFrame:Disable();
+	-- Init expansion data.
+	RAQ_Achievements_InitClassic()
+	RAQ_Achievements_InitTBC()
+	RAQ_Achievements_InitWotlk()
+	RAQ_Achievements_InitCataclysm()
+	RAQ_Achievements_InitMoP()
 
-	tempFrame = getglobal("RAQFrameResetButton");
-	tempFrame:SetScript("OnEnter", RAQ_UpdateButtonTooltip);
-	tempFrame:SetScript("OnLeave", RAQ_HideTooltip);
-	tempFrame:Disable();
+	-- Misc achievements.
+	RAQ_Achievements_InitChallenges()
+
+	-- Init pvp data.
+	RAQ_Achievements_InitPvP()
+
+	-- Global post init.
+	RAQ_PostInitAchivements()
+	RAQ_UpdateScan()
+
+
+	tempFrame = getglobal("RAQFrameScanButton")
+	tempFrame:SetScript("OnEnter", RAQ_UpdateButtonTooltip)
+	tempFrame:SetScript("OnLeave", RAQ_HideTooltip)
+	tempFrame:Disable()
+
+	tempFrame = getglobal("RAQFrameResetButton")
+	tempFrame:SetScript("OnEnter", RAQ_UpdateButtonTooltip)
+	tempFrame:SetScript("OnLeave", RAQ_HideTooltip)
+	tempFrame:Disable()
 
 	-- Headers
-	theFrame = CreateFrame("Button","RAQFrameDataHeader", RAQFrame, "RAQFrameDataLineTemplate");
-	theFrame:SetPoint("TOPLEFT", "RAQFrame", "TOPLEFT", 15, -70 );
+	theFrame = CreateFrame("Button","RAQFrameDataHeader", RAQFrame, "RAQFrameDataLineTemplate")
+	theFrame:SetPoint("TOPLEFT", "RAQFrame", "TOPLEFT", 15, -70 )
 	-- Create columns
 	for j=1,RAQ_NUMBER_COLUMN do
-		tempFrame = CreateFrame("Button","RAQFrameDataHeaderColumn"..j, getglobal("RAQFrameDataHeader"), "RAQFrameDataButtonTemplate");
-		getglobal(tempFrame:GetName().."Caption"):SetText("");
+		tempFrame = CreateFrame("Button","RAQFrameDataHeaderColumn"..j, getglobal("RAQFrameDataHeader"), "RAQFrameDataButtonTemplate")
+		getglobal(tempFrame:GetName().."Caption"):SetText("")
 
 		if( j == 1 ) then
-			tempFrame:SetPoint("TOPLEFT", "RAQFrameDataHeaderNeeded", "TOPRIGHT", 0, 0 );
+			tempFrame:SetPoint("TOPLEFT", "RAQFrameDataHeaderNeeded", "TOPRIGHT", 0, 0 )
 		else
-			tempFrame:SetPoint("TOPLEFT", "RAQFrameDataHeaderColumn"..(j-1), "TOPRIGHT", 2, 0 );
+			tempFrame:SetPoint("TOPLEFT", "RAQFrameDataHeaderColumn"..(j-1), "TOPRIGHT", 2, 0 )
 		end
 
 		-- Add tooltips and click support to header buttons
-		tempFrame:SetScript("OnEnter", RAQ_UpdateHeaderTooltip);
-		tempFrame:SetScript("OnLeave", RAQ_HideTooltip);
-		tempFrame:RegisterForClicks("RightButtonDown");
+		tempFrame:SetScript("OnEnter", RAQ_UpdateHeaderTooltip)
+		tempFrame:SetScript("OnLeave", RAQ_HideTooltip)
+		tempFrame:RegisterForClicks("RightButtonDown")
 		tempFrame:SetScript("OnClick", function(self, button, down)
 			if( button == "RightButton" ) then
-				RAQ_ShowHeaderContextMenu(self);
+				RAQ_ShowHeaderContextMenu(self)
 			end
-		end);
+		end)
 	end
-	getglobal("RAQFrameDataHeaderPlayer"):SetText("");
-	
+	getglobal("RAQFrameDataHeaderPlayer"):SetText("")
+
 	-- "Needed by" line below the header
-	theFrame = CreateFrame("Button","RAQFrameDataNeeded", RAQFrame, "RAQFrameDataLineTemplate");
-	theFrame:SetPoint("TOPLEFT", "RAQFrameDataHeader", "BOTTOMLEFT", 0, 0 );
-	tempPlayer = getglobal("RAQFrameDataNeededPlayer");
-	
-	tempPlayer:SetText("Needed by ");
-	tempPlayer:SetJustifyH("RIGHT");
-	tempPlayer:Hide();
-	tempPlayer:SetWidth(tempPlayer:GetWidth() + getglobal("RAQFrameDataNeededNeeded"):GetWidth());
-	getglobal("RAQFrameDataNeededNeeded"):SetWidth(0);
-	getglobal("RAQFrameDataNeededNeeded"):Hide();
+	theFrame = CreateFrame("Button","RAQFrameDataNeeded", RAQFrame, "RAQFrameDataLineTemplate")
+	theFrame:SetPoint("TOPLEFT", "RAQFrameDataHeader", "BOTTOMLEFT", 0, 0 )
+	tempPlayer = getglobal("RAQFrameDataNeededPlayer")
+
+	tempPlayer:SetText("Needed by ")
+	tempPlayer:SetJustifyH("RIGHT")
+	tempPlayer:Hide()
+	tempPlayer:SetWidth(tempPlayer:GetWidth() + getglobal("RAQFrameDataNeededNeeded"):GetWidth())
+	getglobal("RAQFrameDataNeededNeeded"):SetWidth(0)
+	getglobal("RAQFrameDataNeededNeeded"):Hide()
 
 
 	-- Create columns
 	for j=1,RAQ_NUMBER_COLUMN do
-		local tempFrame = CreateFrame("Button","RAQFrameDataNeededColumn"..j, getglobal("RAQFrameDataHeader"), "RAQFrameDataButtonTemplate");
-		getglobal(tempFrame:GetName().."Caption"):SetText("");
-		getglobal(tempFrame:GetName().."Caption"):SetJustifyH("CENTER");
+		local tempFrame = CreateFrame("Button","RAQFrameDataNeededColumn"..j, getglobal("RAQFrameDataHeader"), "RAQFrameDataButtonTemplate")
+		getglobal(tempFrame:GetName().."Caption"):SetText("")
+		getglobal(tempFrame:GetName().."Caption"):SetJustifyH("CENTER")
 
 		if( j == 1 ) then
-			tempFrame:SetPoint("TOPLEFT", "RAQFrameDataNeededPlayer", "TOPRIGHT", 0, 0 );
+			tempFrame:SetPoint("TOPLEFT", "RAQFrameDataNeededPlayer", "TOPRIGHT", 0, 0 )
 		else
-			tempFrame:SetPoint("TOPLEFT", "RAQFrameDataNeededColumn"..(j-1), "TOPRIGHT", 2, 0 );
+			tempFrame:SetPoint("TOPLEFT", "RAQFrameDataNeededColumn"..(j-1), "TOPRIGHT", 2, 0 )
 		end
 	end
 
 	-- The actual buttons
 	for i=1,RAQ_NUMBER_BUTTON do
-		theFrame = CreateFrame("Button","RAQFrameDataLine"..i, RAQFrame, "RAQFrameDataLineTemplate");
-		theFrame:RegisterForClicks("RightButtonDown");
+		theFrame = CreateFrame("Button","RAQFrameDataLine"..i, RAQFrame, "RAQFrameDataLineTemplate")
+		theFrame:RegisterForClicks("RightButtonDown")
 		theFrame:SetScript("OnClick", function(self, button, down)
 			if( button == "RightButton" ) then
-				RAQ_ShowPlayerContextMenu(self);
+				RAQ_ShowPlayerContextMenu(self)
 			end
-		end);
+		end)
 
 		if( i == 1 ) then
-			theFrame:SetPoint("TOPLEFT", "RAQFrameDataNeeded", "BOTTOMLEFT", 0, 0 );
+			theFrame:SetPoint("TOPLEFT", "RAQFrameDataNeeded", "BOTTOMLEFT", 0, 0 )
 		else
-			theFrame:SetPoint("TOPLEFT", "RAQFrameDataLine"..(i-1), "BOTTOMLEFT", 0, 0 );
+			theFrame:SetPoint("TOPLEFT", "RAQFrameDataLine"..(i-1), "BOTTOMLEFT", 0, 0 )
 		end
 
-		getglobal("RAQFrameDataLine"..i.."Player"):SetText("");
+		getglobal("RAQFrameDataLine"..i.."Player"):SetText("")
 		-- Create columns
 		for j=1,RAQ_NUMBER_COLUMN do
-			local tempFrame = CreateFrame("Button","RAQFrameDataLine"..i.."Column"..j, getglobal("RAQFrameDataLine"..i), "RAQFrameDataButtonTemplate");
-			getglobal(tempFrame:GetName().."Caption"):SetText("");
+			local tempFrame = CreateFrame("Button","RAQFrameDataLine"..i.."Column"..j, getglobal("RAQFrameDataLine"..i), "RAQFrameDataButtonTemplate")
+			getglobal(tempFrame:GetName().."Caption"):SetText("")
 
 			if( j == 1 ) then
-				tempFrame:SetPoint("TOPLEFT", "RAQFrameDataLine"..i.."Needed", "TOPRIGHT", 0, 0 );
+				tempFrame:SetPoint("TOPLEFT", "RAQFrameDataLine"..i.."Needed", "TOPRIGHT", 0, 0 )
 			else
-				tempFrame:SetPoint("TOPLEFT", "RAQFrameDataLine"..i.."Column"..(j-1), "TOPRIGHT", 2, 0 );
+				tempFrame:SetPoint("TOPLEFT", "RAQFrameDataLine"..i.."Column"..(j-1), "TOPRIGHT", 2, 0 )
 			end
 		end
 	end
 
 	-- Create a FauxScrollFrame and anchor it
-	tempFrame = CreateFrame('ScrollFrame', 'RAQFrameScrollList', RAQFrame, 'FauxScrollFrameTemplate');
-	tempFrame:SetPoint('TOPLEFT', "RAQFrameDataLine1", 0, 0);
+	tempFrame = CreateFrame('ScrollFrame', 'RAQFrameScrollList', RAQFrame, 'FauxScrollFrameTemplate')
+	tempFrame:SetPoint('TOPLEFT', "RAQFrameDataLine1", 0, 0)
 	tempFrame:SetWidth((RAQ_NUMBER_COLUMN * 22) + 95); 
-	tempFrame:SetHeight((RAQ_NUMBER_BUTTON-1) * 22);
-	tempFrame:SetScript('OnShow', RAQ_UpdateUIList);
+	tempFrame:SetHeight((RAQ_NUMBER_BUTTON-1) * 22)
+	tempFrame:SetScript('OnShow', RAQ_UpdateUIList)
 	tempFrame:SetScript('OnVerticalScroll', function(self, offset)
-		FauxScrollFrame_OnVerticalScroll(self, offset, 22, RAQ_UpdateUIList);
+		FauxScrollFrame_OnVerticalScroll(self, offset, 22, RAQ_UpdateUIList)
 	end)
-	tempFrame:Show();
+	tempFrame:Show()
 
-	-- Create drop down selection for achievement.
-	RAQ_CreateMainDropDown();
+	-- Create dropdown for achievement.
+	RAQ_CreateMainDropDown()
+	
+	-- Create dropdown for options.
+	RAQ_CreateOptionDropDown()
 
 	-- ..and player context menu
-	RAQ_CreatePlayerContext();
+	RAQ_CreatePlayerContext()
 
 	-- ..and header context menu
-	RAQ_CreateHeaderContext();
+	RAQ_CreateHeaderContext()
 
-	SLASH_RAQ1 = "/raq";
+	SLASH_RAQ1 = "/raq"
 	SlashCmdList["RAQ"] = function(msg)
-		RAQFrame:Show();
+		RAQFrame:Show()
 	end
 
-	SLASH_RAQFAKE1 = "/raqfake";
+	SLASH_RAQFAKE1 = "/raqfake"
 	SlashCmdList["RAQFAKE"] = function(msg)
-		RAQ_AddFakeUser(msg);
-		RAQ_UpdateUIList();
+		RAQ_AddFakeUser(msg)
+		RAQ_UpdateUIList()
 	end
 
-	self.TimeSinceLastUpdate = 0;
+	self.TimeSinceLastUpdate = 0
 end
 
 function RAQ_UpdateHandler(self, elapsed)
 	if( _RAQ_Timer ~= nil and _RAQ_Timer.timeout ~= nil ) then
-		self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed;
+		self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed
 		if( self.TimeSinceLastUpdate > RAQ_UPDATE_INTERVAL ) then
-			self.TimeSinceLastUpdate = 0;
-			_RAQ_Timer.timeout = _RAQ_Timer.timeout - 1;
+			self.TimeSinceLastUpdate = 0
+			_RAQ_Timer.timeout = _RAQ_Timer.timeout - 1
 			if( _RAQ_Timer.timeout == 0 ) then
-				local callback = _RAQ_Timer.callback;
-				RAQ_KillTimer();
-				callback();
+				local callback = _RAQ_Timer.callback
+				RAQ_KillTimer()
+				callback()
 			end
 		end
 	end
 end
 
-function RAQ_EventHandler(event)
+function RAQ_EventHandler(event, arg1)
 	if( event == "INSPECT_ACHIEVEMENT_READY" ) then
 		-- Only trigger if we have a timer active, as this gets called for other stuff. Like "normal" achievement compares.
 		if( _RAQ_Timer ~= nil ) then
-			local k,v,i,needed,completed,month,day,year,completedOut;
+			local k,v,i,needed,completed,month,day,year,completedOut
 
-			RAQ_KillTimer();
+			RAQ_KillTimer()
 
-			RAQ_SetStatus(_unitName,"SUCCESS");
-			RAQ_DATA[_unitName]["_data"] = {};
-			i = 1;
+			RAQ_SetStatus(_unitName,"SUCCESS")
+			RAQ_DATA[_unitName]["_data"] = {}
+			i = 1
 			for k,v in pairs(RAQ_DB["_scan"]) do
-				completed = select(1,GetAchievementComparisonInfo(k));
+				completed = select(1, GetAchievementComparisonInfo(k))
 
 				-- For some reason this is needed
 				if( completed == true ) then
-					completedOut = true;
+					completedOut = true
 				else
-					completedOut = false;
+					completedOut = false
 				end
-				RAQ_DATA[_unitName]["_data"][k] = completedOut;
+				RAQ_DATA[_unitName]["_data"][k] = completedOut
 			end
-			ClearAchievementComparisonUnit();
-			RAQ_RunQueue();
+			ClearAchievementComparisonUnit()
+			RAQ_RunQueue()
 		end
+	elseif( event == "ADDON_LOADED" and arg1 == "RAQ" ) then
+		if( RAQ_OPTION["_meta"]["firstTime"] ) then
+			-- Set all expansions.
+			for k,v in pairs(RAQ_DB["_expansion"]) do
+				RAQ_OPTION["expansion"][k] = true
+			end
+
+			-- Set both pve and pvp.
+			RAQ_OPTION["category"]["pve"] = true
+			RAQ_OPTION["category"]["pvp"] = true
+	
+			-- Unset first time
+			RAQ_OPTION["_meta"]["firstTime"] = false
+		end
+	
+		RAQ_OPTION["_meta"]["version"] = GetAddOnMetadata("RAQ", "Version")
 	end
 end
 
 function RAQ_StatusReport(self,isPlayer,target)
-	local out = {};
-	local targetTwo;
-	local count = 0;
-	local isRealID = false;
+	local out = {}
+	local targetTwo
+	local count = 0
+	local isRealID = false
 
 	if( isPlayer == nil ) then
-		isPlayer = false;
+		isPlayer = false
 	end
 
 	if( string.find(target,"CHANNEL|(%d+)") ) then
-		targetTwo = tonumber(select(3,string.find(target,"CHANNEL|(%d+)")));
-		target = "CHANNEL";
+		targetTwo = tonumber(select(3,string.find(target,"CHANNEL|(%d+)")))
+		target = "CHANNEL"
 	elseif( string.find(target,"REALID|(%d+)") ) then
-		isRealID = true;
-		target = tonumber(select(3,string.find(target,"REALID|(%d+)")));
+		isRealID = true
+		target = tonumber(select(3,string.find(target,"REALID|(%d+)")))
 	elseif( target == "WHISPER" ) then
 		if( UnitName("target") == nil ) then
-			RAQ_Error("No target selected.");
-			return;
+			RAQ_Error("No target selected.")
+			return
 		end
 		if( UnitIsPlayer("target") ~= 1 ) then
-			RAQ_Error("Target is not a player.");
-			return;
+			RAQ_Error("Target is not a player.")
+			return
 		end
-		targetTwo = UnitName("target");
+		targetTwo = UnitName("target")
 	end
 
 	if( target == nil ) then
-		RAQ_Error("You are not in a raid or party. Nothing to report to.");
-		return;
+		RAQ_Error("You are not in a raid or party. Nothing to report to.")
+		return
 	end
 
-	out["incomplete"] = {};
-	out["unknown"] = {};
+	out["incomplete"] = {}
+	out["unknown"] = {}
 
 	if( isPlayer ) then
-		local playerName = self:GetText();
-		local data = RAQ_GetSelectedTable();
+		local playerName = self:GetText()
+		local data = RAQ_GetSelectedTable()
 		if( data ~= nil ) then
-			local selectedAchievement = UIDropDownMenu_GetSelectedValue(RAQDropDown);
-			local header = selectedAchievement[#selectedAchievement];
-			
+			local selectedAchievement = UIDropDownMenu_GetSelectedValue(RAQDropDown)
+			local header = selectedAchievement[#selectedAchievement]
+
 			if( RAQ_DATA[playerName]["_status"] == "SUCCESS" ) then
 				for k,v in ipairs(data) do
 					if( RAQ_DATA[playerName]["_data"][v] == false ) then
-						name = select(2,GetAchievementInfo(v));
-						table.insert(out["incomplete"],name);
+						name = select(2,GetAchievementInfo(v))
+						table.insert(out["incomplete"],name)
 					end
-					count = count + 1;
+					count = count + 1
 				end
-		
-				local incomplete = table.concat(out["incomplete"],", ");
-				local maxLength = 255;
+
+				local incomplete = table.concat(out["incomplete"],", ")
+				local maxLength = 255
 
 				if( #out["incomplete"] == 0 ) then
-					SendChatMessage(string.format("[RAQ] %s: %s has completed all.",header,playerName),target,nil,targetTwo);
+					SendChatMessage(string.format("[RAQ] %s: %s has completed all.",header,playerName),target,nil,targetTwo)
 				else
-					local out = string.format("[RAQ] %s: %s needs %d of %d: %s",header,playerName,#out["incomplete"],count,incomplete);
-					local temp = '';
+					local out = string.format("[RAQ] %s: %s needs %d of %d: %s",header,playerName,#out["incomplete"],count,incomplete)
+					local temp = ''
 					for word in out:gmatch("%S+") do
 						if( string.len(temp..' '..word) >= maxLength ) then
-							RAQ_SendMessage(temp, isRealID, target, targetTwo);
-							temp = '';
+							RAQ_SendMessage(temp, isRealID, target, targetTwo)
+							temp = ''
 						end
-						temp = temp .. word .. ' ';
+						temp = temp .. word .. ' '
 					end
 					if( temp ~= '' ) then
-						RAQ_SendMessage(temp, isRealID, target, targetTwo);
+						RAQ_SendMessage(temp, isRealID, target, targetTwo)
 					end
 				end
 			else
-				RAQ_Error(string.format("%s: Scan failed for %s. Rescan before reporting again.",header,playerName));
+				RAQ_Error(string.format("%s: Scan failed for %s. Rescan before reporting again.",header,playerName))
 			end
 		else
-			RAQ_Error("Nothing selected.");
+			RAQ_Error("Nothing selected.")
 		end
 	else
 		for k,v in pairs(RAQ_DATA) do
 			if( v ~= nil ) then
 				if( v["_status"] == "SUCCESS" ) then
 					if( v["_data"][self.achievementID] == false ) then
-						table.insert(out["incomplete"],k);
+						table.insert(out["incomplete"],k)
 					end
 				else
-					table.insert(out["unknown"],k);
+					table.insert(out["unknown"],k)
 				end
 			end
-			count = count + 1;
+			count = count + 1
 		end
 
-		table.sort(out["incomplete"]);
-		table.sort(out["unknown"]);
+		table.sort(out["incomplete"])
+		table.sort(out["unknown"])
 
-		local incomplete = table.concat(out["incomplete"],", ");
-		local unknown = table.concat(out["unknown"],", ");
+		local incomplete = table.concat(out["incomplete"],", ")
+		local unknown = table.concat(out["unknown"],", ")
 
 		if( incomplete == "" ) then incomplete = "No one"; end
 
-		RAQ_SendMessage("[RAQ] "..self.link..":", isRealID, target, targetTwo);
-		RAQ_SendMessage(string.format("Needed by (%d of %d): %s",#out["incomplete"],count-#out["unknown"],incomplete), isRealID, target, targetTwo);
-		
+		if( self.link == nil ) then
+			self.link = "<unknown>"
+		end
+
+		RAQ_SendMessage("[RAQ] "..self.link..":", isRealID, target, targetTwo)
+		RAQ_SendMessage(string.format("Needed by (%d of %d): %s",#out["incomplete"],count-#out["unknown"],incomplete), isRealID, target, targetTwo)
+
 		if( unknown ~= "" ) then
-			RAQ_SendMessage(string.format("Not scanned (%d): %s",#out["unknown"],unknown), isRealID, target, targetTwo);
+			RAQ_SendMessage(string.format("Not scanned (%d): %s",#out["unknown"],unknown), isRealID, target, targetTwo)
 		end
 	end
 end
 
 function RAQ_SendMessage(temp, isRealID, target, targetTwo)
 	if( isRealID ) then
-		BNSendWhisper(target, temp);
+		BNSendWhisper(target, temp)
 	else
-		SendChatMessage(temp, target, nil, targetTwo);
+		SendChatMessage(temp, target, nil, targetTwo)
 	end
 end
 
 
 function RAQ_HandleButton(self)
-	local buttonID = self:GetID();
+	local buttonID = self:GetID()
 
 	if( buttonID == 1 ) then
-		local scanMode = "refresh";
+		local scanMode = "refresh"
 		-- Scan
 		if( IsControlKeyDown() ) then
-			scanMode = "force";
+			scanMode = "force"
 		end
-		RAQ_StartScan(scanMode);
+		RAQ_StartScan(scanMode)
 	elseif( buttonID == 2 ) then
 		-- Clear data
-		RAQ_DATA = {};
-		RAQ_UpdateUIList();
+		RAQ_DATA = {}
+		RAQ_UpdateUIList()
 	elseif( buttonID == 3 or buttonID == 4 ) then
 		-- Prev/Next
 		if( buttonID == 3 ) then
-			RAQ_CURRENT_PAGE = RAQ_CURRENT_PAGE - 1;
+			RAQ_CURRENT_PAGE = RAQ_CURRENT_PAGE - 1
 		else
-			RAQ_CURRENT_PAGE = RAQ_CURRENT_PAGE + 1;
+			RAQ_CURRENT_PAGE = RAQ_CURRENT_PAGE + 1
 		end
-		RAQ_UpdateHeader();
-		RAQ_UpdateUIList();
+		RAQ_UpdateHeader()
+		RAQ_UpdateUIList()
 	else
 		-- Unknown
-		local buttonIDOut = buttonID;
+		local buttonIDOut = buttonID
 		if( buttonIDOut == nil ) then
-			buttonIDOut = "(nil)";
+			buttonIDOut = "(nil)"
 		end
-		RAQ_Error("Unknown button, name is '"..self:GetName().."' id is '"..buttonIDOut.."'");
+		RAQ_Error("Unknown button, name is '"..self:GetName().."' id is '"..buttonIDOut.."'")
 	end
 end
 
 function RAQ_GetSelectedTable()
-	local temp = UIDropDownMenu_GetSelectedValue(RAQDropDown);
+	local t = UIDropDownMenu_GetSelectedValue(RAQDropDown)
 
-	if( type(temp) == "table" ) then
-		if( #temp == 2 ) then
-			-- Instance or meta
-			
-			-- Small hack to fix so you can click on a boss submenu and get to instance mode.
-			-- eg "_boss / Blackwing Descent" leads to "_instance / Blackwing Descent"
-			if( temp[1] == "_boss" ) then
-				temp[1] = "_instance";
-			end
+	if( t == nil ) then
+		return nil
+	end
 
-			local t = {};
-			for k,v in pairs(RAQ_DB[temp[1]][temp[2]]) do
+	if( type(t) ~= "table" ) then
+		RAQ_Error("Unknown type ("..type(t)..") in GetSelectedTable.")
+	end
+
+	-- pvp is stored in a special way.
+	if( t[1] == "_pvp" ) then
+		local temp = {}
+		if( t[2] == "bg" ) then
+			for k,v in pairs(RAQ_DB[t[1]][t[3]]) do
 				if( k ~= "_meta" ) then
-					table.insert(t,k);
+					table.insert(temp, k)
 				end
 			end
-			return t;
+		elseif( t[2] == "Arena" or t[2] == "Rated Battleground" ) then
+			for k,v in pairs(RAQ_DB[t[1]]) do
+				if( v["_meta"].subcategory == t[2] ) then
+					for k2,v2 in pairs(v) do
+						if( k2 ~= "_meta" ) then
+							table.insert(temp, k2)
+						end
+					end
+				end
+			end
+		elseif( t[2] == "meta" ) then
+			for k,v in pairs(RAQ_DB["_meta"][t[3]]) do
+				if( k ~= "_meta" ) then
+					table.insert(temp, k)
+				end
+			end
 		end
-		if( #temp == 3 ) then
-			-- Straight up boss, just return as it is.
-			return RAQ_DB[temp[1]][temp[2]][temp[3]];
+		return temp
+	elseif( t[1] == "_scenario" ) then
+		-- As is scenario. Currently only one stored scenario.
+		local temp = {}
+		for k,v in pairs(RAQ_DB[t[1]][t[2]]) do
+			if( k ~= "_meta" ) then
+				table.insert(temp, k)
+			end
 		end
-		RAQ_Error("Unknown length of table ("..#temp..") in GetSelectedTable.");
-		return nil;
-	elseif( type(temp) == "string" ) then
-		return nil;
-	elseif( type(temp) ~= "nil" ) then
-		RAQ_Error("Unknown type ("..type(temp)..") in GetSelectedTable.");
+		return temp
 	end
+
+	if( #t == 2 ) then
+		-- Small hack to fix so you can click on a boss submenu and get to instance mode.
+		if( t[1] == "_boss" ) then
+			t[1] = "_instance"
+		end
+		if( t[1] == "_dungeon" or t[1] == "_raid" ) then
+			t[1] = "_instance"
+		end
+		if( t[1] == "_challenge" ) then
+			t[1] = "_instance"
+		end
+
+		-- Strip out _meta key (so we don't have to handle it elsewhere)
+		local temp = {}
+		for k,v in pairs(RAQ_DB[t[1]][t[2]]) do
+			if( k ~= "_meta" ) then
+				table.insert(temp, k)
+			end
+		end
+		return temp
+	elseif( #t == 3 ) then
+		-- Straight up boss, just return as it is.
+		return RAQ_DB[t[1]][t[2]][t[3]]
+	end
+	RAQ_Error("Unknown length of table ("..#t..") in GetSelectedTable.")
+	return nil
 end
 
 function RAQ_HideAllDropDowns()
-	local i,frame;
+	local i,frame
 	-- Hides ALL the dropdown lists.
 	-- FIXME: Investigate if this can be done properly, and not in this hackish way.
-	i = 1;
+	i = 1
 	repeat
-		frame = getglobal("DropDownList"..i);
+		frame = getglobal("DropDownList"..i)
 		if( frame ~= nil ) then
-			frame:Hide();
+			frame:Hide()
 		end
-		i = i + 1;
-	until( frame == nil or i > 10 );
+		i = i + 1
+	until( frame == nil or i > 10 )
 end
 
 function RAQ_CreateMainDropDown()
-	local temp = CreateFrame("Frame", "RAQDropDown", RAQFrame, "UIDropDownMenuTemplate");
-	local t = {};
+	local temp = CreateFrame("Frame", "RAQDropDown", RAQFrame, "UIDropDownMenuTemplate")
+	local t = {}
 
-	temp:ClearAllPoints();
-	temp:SetPoint("TOPLEFT", RAQFrame, "TOPLEFT", 0, -25);
-	temp:Show();
+	temp:ClearAllPoints()
+	temp:SetPoint("TOPLEFT", RAQFrame, "TOPLEFT", 0, -25)
+	temp:Show()
 
 	local function OnClick(self, arg1)
-		RAQ_HideAllDropDowns();
-		UIDropDownMenu_SetSelectedValue(RAQDropDown, self.value);
-		
+		RAQ_HideAllDropDowns()
+		UIDropDownMenu_SetSelectedValue(RAQDropDown, self.value)
+
 		-- Set the dropdown text to the last value, for looks only. :>
 		if( type(self.value) == "table" ) then
-			UIDropDownMenu_SetText(RAQDropDown, self.value[#self.value]);
+			UIDropDownMenu_SetText(RAQDropDown, self.value[#self.value])
 		end
 
-		RAQ_CURRENT_PAGE = 1;
-		RAQ_UpdateHeader();
-		RAQ_UpdateUIList();
+		RAQ_CURRENT_PAGE = 1
+		RAQ_UpdateHeader()
+		RAQ_UpdateUIList()
+	end
+
+	local function includeEntry(meta, ref)
+		-- Check expansion
+		if( meta.expansion ~= "" and RAQ_OPTION["expansion"][meta.expansion] == nil ) then
+			return false
+		end
+		
+		-- Check category if requested.
+		if( ref.category and meta.category ~= ref.category ) then
+			return false
+		end
+
+		-- Check subcategory if requested.
+		if( ref.subcategory and meta.subcategory ~= ref.subcategory ) then
+			return false
+		end
+
+		return true
+	end
+
+	local function getCategory()
+		local both
+		if( RAQ_OPTION["category"]["pve"] ~= nil and RAQ_OPTION["category"]["pvp"] ~= nil ) then
+			return UIDROPDOWNMENU_MENU_VALUE[1]
+		else
+			if( RAQ_OPTION["category"]["pve"] ~= nil ) then
+				return "pve"
+			elseif( RAQ_OPTION["category"]["pvp"] ~= nil ) then
+				return "pvp"
+			else
+				return ""
+			end
+		end
 	end
 
 	local function initialize(self, level)
-		t = {};
-		level = level or 1;
+		--[[
+		   Drop down menu structure:
 
-		if( level == 1 ) then
-			table.insert(t,{ name = "Boss mode", key = "_boss" });
-			table.insert(t,{ name = "Instance mode", key = "_instance" });
-			table.insert(t,{ name = "Meta mode", key = "_meta" });
-			table.sort(t, function(a,b) return a.name < b.name end)
+		   RAQ
+		   +- PvE
+		      +- Bosses
+		         +- <zones>
+		            +- <bosses>
+		      +- Dungeons
+		         +- <dungeons>
+		      +- Raids
+		         +- <raids>
+		      +- Meta achivements
+		         +- <metas>
+		      +- Scenarios
+		      +- Dungeon Challenges
+		   +- PvP
+		      +- Arena
+		      +- Battleground
+		         +- <list of bgs>
+		      +- Meta
+		      +- Rated Battleground
+		]]--
+		t = {}
+		level = level or 1
 
-			local info = UIDropDownMenu_CreateInfo();
-			for i,v in ipairs(t) do
-				info = UIDropDownMenu_CreateInfo();
-				info.func = OnClick;
-				info.hasArrow = true;
-				info.notCheckable = true;
-				info.text = v.name;
-				info.value = v.key;
-				UIDropDownMenu_AddButton(info, level);
-			end
+		local both
+		if( RAQ_OPTION["category"]["pve"] ~= nil and RAQ_OPTION["category"]["pvp"] ~= nil ) then
+			both = true
+		else
+			both = false
 		end
-		
-		-- Meta/instances/boss.
-		if( level == 2 ) then
-			t = {};
-			for k,v in pairs(RAQ_DB[UIDROPDOWNMENU_MENU_VALUE]) do
-				table.insert(t,k);
-			end
-			table.sort(t);
 
-			local info = UIDropDownMenu_CreateInfo();
-			for i,v in ipairs(t) do
-				info = UIDropDownMenu_CreateInfo();
-				info.func = OnClick;
-				local temp = {};
-				if( UIDROPDOWNMENU_MENU_VALUE == "_boss" ) then
-					info.hasArrow = true;
-					info.notCheckable = true;
-				else
-					info.hasArrow = false;
-					info.notCheckable = true;
+		local elevel
+		if( both == true ) then
+			elevel = level
+		else
+			elevel = level + 1
+		end
+
+		local nothing = {
+			name = "Nothing to display",
+			arrow = false,
+			clickable = false,
+			title = true,
+		}
+
+		if( elevel == 1 ) then
+			-- Categories.
+			table.insert(t, {
+				name = "PvE",
+				value = { "pve" },
+				sort = 0,
+			})
+			table.insert(t, {
+				name = "PvP",
+				value = { "pvp" },
+				sort = 1,
+			})
+		end	
+
+		if( elevel == 2 ) then
+			if( getCategory() == "pve" ) then
+				table.insert(t, {
+					name = "Bosses",
+					clickable = false,
+					value = { "_boss" },
+					sort = 0,
+				})
+				table.insert(t, {
+					name = "Dungeons",
+					clickable = false,
+					value = { "_dungeon" },
+					sort = 10,
+				})
+				table.insert(t, {
+					name = "Raids",
+					clickable = false,
+					value = { "_raid" },
+					sort = 20,
+				})
+				table.insert(t, {
+					name = "Meta achievements",
+					clickable = false,
+					value = { "_meta" },
+					sort = 30,
+				})
+				table.insert(t, {
+					name = "Challenges",
+					clickable = false,
+					value = { "_challenge" },
+					sort = 40,
+				})
+
+				if( includeEntry(RAQ_DB["_scenario"]["Scenarios"]["_meta"], { category = "pve" }) ) then
+					table.insert(t, {
+						name = "Scenarios",
+						value = { "_scenario", "Scenarios" },
+						arrow = false,
+						sort = 50,
+					})
 				end
-				info.text = v;
-				table.insert(temp,UIDROPDOWNMENU_MENU_VALUE);
-				table.insert(temp,v);
-				info.value = temp;
-				UIDropDownMenu_AddButton(info, level);
+			elseif( getCategory() == "pvp" ) then
+				table.insert(t, {
+					name = "Arena",
+					arrow = false,
+					value = { "_pvp", "Arena" },
+					sort = 0,
+				})
+				table.insert(t, {
+					name = "Battleground",
+					clickable = false,
+					value = { "_pvp", "bg" },
+					sort = 1,
+				})
+				table.insert(t, {
+					name = "Rated Battleground",
+					arrow = false,
+					value = { "_pvp", "Rated Battleground" },
+					sort = 2,
+				})
+				table.insert(t, {
+					name = "Meta",
+					value = { "_pvp", "meta" },
+					sort = 3,
+				})
+			end
+			if( next(t) == nil ) then
+				table.insert(t, nothing)
 			end
 		end
-		
-		-- Bosses
-		if( level == 3 ) then
-			t = {};
-			local instance = UIDROPDOWNMENU_MENU_VALUE[2];
-			for k,v in pairs(RAQ_DB[UIDROPDOWNMENU_MENU_VALUE[1]][instance]) do
-				table.insert(t,k);
-			end
-			table.sort(t);
 
-			local info = UIDropDownMenu_CreateInfo();
-			for i,v in ipairs(t) do
-				info = UIDropDownMenu_CreateInfo();
-				info.func = OnClick;
-				info.hasArrow = false;
-				info.notCheckable = true;
-				info.text = v;
-				local temp = {};
-				table.insert(temp,UIDROPDOWNMENU_MENU_VALUE[1]);
-				table.insert(temp,instance);
-				table.insert(temp,v);
-				info.value = temp;
-				UIDropDownMenu_AddButton(info, level);
+		if( elevel == 3 ) then
+			if( UIDROPDOWNMENU_MENU_VALUE[1] == "_dungeon" or UIDROPDOWNMENU_MENU_VALUE[1] == "_raid" ) then
+				-- Dungeon or raid for PvE.
+				local subcat
+				if( UIDROPDOWNMENU_MENU_VALUE[1] == "_raid" ) then
+					subcat = "raid"
+				else
+					subcat = "dungeon"
+				end
+				for k,v in pairs(RAQ_DB["_instance"]) do
+					if( includeEntry(v["_meta"], { category = "pve", subcategory = subcat }) ) then
+						table.insert(t, {
+							name = k,
+							arrow = false,
+							value = { UIDROPDOWNMENU_MENU_VALUE[1], k }
+						})
+					end
+				end
+			elseif( UIDROPDOWNMENU_MENU_VALUE[1] == "_challenge" ) then
+				-- Dungeon challenges for PvE.
+				for k,v in pairs(RAQ_DB["_instance"]) do
+					if( includeEntry(v["_meta"], { category = "pve", subcategory = "challenge" }) ) then
+						table.insert(t, {
+							name = k,
+							arrow = false,
+							value = { UIDROPDOWNMENU_MENU_VALUE[1], k }
+						})
+					end
+				end
+			elseif( UIDROPDOWNMENU_MENU_VALUE[1] == "_meta" ) then
+				-- Meta for PvE.
+				for k,v in pairs(RAQ_DB[UIDROPDOWNMENU_MENU_VALUE[1]]) do
+					if( includeEntry(v["_meta"], { category = "pve" }) ) then
+						table.insert(t, {
+							name = k,
+							arrow = false,
+							value = { UIDROPDOWNMENU_MENU_VALUE[1], k }
+						})
+					end
+				end
+			elseif( UIDROPDOWNMENU_MENU_VALUE[1] == "_boss" ) then
+				-- Boss name for PvE.
+				for k,v in pairs(RAQ_DB[UIDROPDOWNMENU_MENU_VALUE[1]]) do
+					if( includeEntry(RAQ_DB["_instance"][k]["_meta"], { category = "pve" }) ) then
+						table.insert(t, {
+							name = k,
+							arrow = true,
+							value = { UIDROPDOWNMENU_MENU_VALUE[1], k }
+						})
+					end
+				end
+			elseif( UIDROPDOWNMENU_MENU_VALUE[1] == "_pvp" ) then
+				if( UIDROPDOWNMENU_MENU_VALUE[2] == "bg" ) then
+					-- Battleground.
+					for k,v in pairs(RAQ_DB[UIDROPDOWNMENU_MENU_VALUE[1]]) do
+						if( includeEntry(v["_meta"], { subcategory = "bg" }) ) then
+							table.insert(t, {
+								name = k,
+								arrow = false,
+								value = { UIDROPDOWNMENU_MENU_VALUE[1], "bg", k }
+							})
+						end
+					end
+				elseif( UIDROPDOWNMENU_MENU_VALUE[2] == "meta" ) then
+					-- List PvP meta achievements.
+					for k,v in pairs(RAQ_DB["_meta"]) do
+						if( includeEntry(v["_meta"], { category = "pvp" })) then
+							table.insert(t, {
+								name = k,
+								arrow = false,
+								value = { UIDROPDOWNMENU_MENU_VALUE[1], "meta", k }
+							})
+						end
+					end
+				end
+			else
+				table.insert(t, {
+					name = "Internal error",
+					arrow = false,
+					clickable = false,
+					value = { "_error" },
+				})
 			end
+			if( next(t) == nil ) then
+				table.insert(t, nothing)
+			end
+		end
+
+		if( elevel == 4 ) then
+			if( UIDROPDOWNMENU_MENU_VALUE[1] == "_boss" ) then
+				-- Achievements tied for a specific boss in PvE.
+				local instance = UIDROPDOWNMENU_MENU_VALUE[2]
+				for k,v in pairs(RAQ_DB["_boss"][instance]) do
+					table.insert(t, {
+						name = k,
+						arrow = false,
+						value = { "_boss", instance, k }
+					})
+				end
+			end
+		end
+
+
+		if( next(t) == nil ) then
+			table.insert(t, {
+				name = "Internal error",
+				arrow = false,
+				clickable = false,
+				value = { "_error" }
+			})
+		end
+
+		table.sort(t, function(a,b)
+			if( a.sort and b.sort ) then
+				return a.sort < b.sort
+			else
+				return a.name < b.name
+			end
+		end)
+		local info = UIDropDownMenu_CreateInfo()
+		local temp
+		for k,v in ipairs(t) do
+			info = UIDropDownMenu_CreateInfo()
+			if( v.clickable == nil or v.clickable ) then
+				info.func = OnClick
+			end
+			if( v.arrow == nil or v.arrow ) then
+				info.hasArrow = true
+			else
+				info.hasArrow = false
+			end
+			if( v.title ~= nil and v.title ) then
+				info.isTitle = true
+			end
+			info.notCheckable = true
+			info.text = v.name
+			info.value = v.value
+			UIDropDownMenu_AddButton(info, level)
 		end
 	end
 
-	UIDropDownMenu_Initialize(RAQDropDown, initialize);
-	UIDropDownMenu_SetWidth(RAQDropDown, 300);
-	UIDropDownMenu_SetButtonWidth(RAQDropDown, 300);
-	UIDropDownMenu_JustifyText(RAQDropDown, "LEFT");
+	UIDropDownMenu_Initialize(RAQDropDown, initialize)
+	UIDropDownMenu_SetWidth(RAQDropDown, 250)
+	UIDropDownMenu_SetButtonWidth(RAQDropDown, 250)
+	UIDropDownMenu_JustifyText(RAQDropDown, "LEFT")
 
 end
-	
-function RAQ_BuildChannelList(...)
-	local tbl = {};
-	for i=1,select('#',...), 2 do
-		local id,name = select(i,...);
-		table.insert(tbl, { name = id..". "..name, key = "CHANNEL|"..id });
+
+function RAQ_CreateOptionDropDown()
+	local temp = CreateFrame("Frame", "RAQOptionDropDown", RAQFrame, "UIDropDownMenuTemplate")
+	local t = {}
+
+	temp:ClearAllPoints()
+	temp:SetPoint("TOPLEFT", RAQDropDown, "TOPRIGHT", -25, 0)
+	temp:Show()
+
+	local function OnClick(self, arg1, arg2, checked)
+		if( arg1 ~= nil and arg1 ~= "" ) then
+			if( checked ) then
+				RAQ_OPTION[arg2][arg1] = nil
+			else
+				RAQ_OPTION[arg2][arg1] = true
+			end
+		end
+		UIDropDownMenu_SetText(RAQOptionDropDown, "Options")
 	end
-	return tbl;
+
+	local function initialize(self, level)
+		t = {}
+		level = level or 1
+
+		if( level == 1 ) then
+			table.insert(t, {
+				name = "Expansions:",
+				title = true,
+				sort = -10,
+				arrow = false,
+				checkable = false,
+			})
+			
+			-- Expansions.
+			for k,v in pairs(RAQ_DB["_expansion"]) do
+				table.insert(t, {
+					name = v.name,
+					key = k,
+					sort = v.sort,
+					check = "expansion",
+				})
+			end
+		
+			table.insert(t, {
+				blank = true,
+				sort = 100,
+			})
+
+			-- Categories.
+			table.insert(t, {
+				name = "Categories:",
+				title = true,
+				sort = 101,
+				arrow = false,
+				checkable = false,
+			})
+	
+			table.insert(t, {
+				name = "PvE",
+				key = "pve",
+				check = "category",
+				sort = 102,
+			})
+			table.insert(t, {
+				name = "PvP",
+				key = "pvp",
+				check = "category",
+				sort = 103,
+			})
+		end	
+
+		if( next(t) == nil ) then
+			table.insert(t, {
+				name = "Internal error",
+				key = "",
+				clickable = false,
+			})
+		end
+
+		table.sort(t, function(a,b) return a.sort < b.sort end)
+		local info = UIDropDownMenu_CreateInfo()
+		local temp
+		for k,v in ipairs(t) do
+			info = UIDropDownMenu_CreateInfo()
+			
+			if( v.blank ~= nil ) then
+				wipe(info)
+				info.disabled = true
+				info.notCheckable = true
+			else
+				if( v.clickable == nil or v.clickable ) then
+					info.func = OnClick
+				end
+				info.hasArrow = false
+				if( v.checkable == false ) then
+					info.notCheckable = true 
+				end
+				if( v.check and RAQ_OPTION[v.check][v.key] ~= nil ) then
+					info.checked = true
+				else
+					info.checked = nil
+				end
+				info.text = v.name
+				info.arg1 = v.key
+				info.arg2 = v.check
+				if( v.title ~= nil and v.title ) then
+					info.isTitle = true
+				end
+			end
+			UIDropDownMenu_AddButton(info, level)
+			info.disabled = nil
+		end
+	end
+
+	UIDropDownMenu_Initialize(RAQOptionDropDown, initialize)
+	UIDropDownMenu_SetWidth(RAQOptionDropDown, 75)
+	UIDropDownMenu_SetButtonWidth(RAQOptionDropDown, 75)
+	UIDropDownMenu_JustifyText(RAQOptionDropDown, "LEFT")
+	UIDropDownMenu_SetText(RAQOptionDropDown, "Options")
+end
+
+function RAQ_BuildChannelList(...)
+	local tbl = {}
+	for i=1,select('#',...), 2 do
+		local id,name = select(i,...)
+		table.insert(tbl, { name = id..". "..name, key = "CHANNEL|"..id })
+	end
+	return tbl
 end
 
 function RAQ_GetReportList()
-	local tbl = {};
-	local first;
+	local tbl = {}
+	local first
 
 	-- Normal targets.
-	table.insert(tbl,{ title = "Report to" });
-	table.insert(tbl,{ name = "Say", key = "SAY" });
-	if( GetNumPartyMembers() > 0 ) then
-		table.insert(tbl,{ name = "Party", key = "PARTY" });
+	table.insert(tbl,{ title = "Report to" })
+	table.insert(tbl,{ name = "Say", key = "SAY" })
+
+	local num = GetNumGroupMembers()
+	if( num > 0 ) then
+		table.insert(tbl,{ name = "Party", key = "PARTY" })
+		if( IsInRaid() ) then
+			table.insert(tbl,{ name = "Raid", key = "RAID" })
+			table.insert(tbl,{ name = "Raid Warning", key = "RAID_WARNING" })
+		end
 	end
-	if( GetNumRaidMembers() > 0 ) then
-		table.insert(tbl,{ name = "Raid", key = "RAID" });
-		table.insert(tbl,{ name = "Raid Warning", key = "RAID_WARNING" });
-	end
+
 	if( UnitInBattleground("player") ~= nil ) then
-		table.insert(tbl,{ name = "Battleground", key = "BATTLEGROUND" });
+		table.insert(tbl,{ name = "Battleground", key = "BATTLEGROUND" })
 	end
 
 	-- Guild.
 	if( select(1,GetGuildInfo("player")) ~= nil ) then
-		table.insert(tbl,{ name = "Guild", key = "GUILD" });
-		table.insert(tbl,{ name = "Officer", key = "OFFICER" });
+		table.insert(tbl,{ name = "Guild", key = "GUILD" })
+		table.insert(tbl,{ name = "Officer", key = "OFFICER" })
 	end
-	
+
 	-- Whisper target.
-	table.insert(tbl,{ name = "Whisper Target", key = "WHISPER" });
-	
+	table.insert(tbl,{ name = "Whisper Target", key = "WHISPER" })
+
 	-- Channels.
-	first = true;
+	first = true
 	for k,v in ipairs(RAQ_BuildChannelList(GetChannelList())) do
 		if( first ) then
-			table.insert(tbl,{ title = "Channels" });
-			first = false;
+			table.insert(tbl,{ title = "Channels" })
+			first = false
 		end
-		table.insert(tbl,v);
+		table.insert(tbl,v)
 	end
 
 	-- RealID.
-	first = true;
+	first = true
 	for i=1, select(2, BNGetNumFriends()) do
-		local id,realNameOne,realNameTwo,charName = BNGetFriendInfo(i);
-	
+		local id,realNameOne,realNameTwo,charName = BNGetFriendInfo(i)
+
 		if( first ) then
-			table.insert(tbl,{ title = "Real ID friends" });
-			first = false;
+			table.insert(tbl,{ title = "Real ID friends" })
+			first = false
 		end
-		table.insert(tbl, { name = realNameOne.." "..realNameTwo.." ("..charName..")", key = "REALID|"..id });
+		table.insert(tbl, { name = realNameOne.." "..realNameTwo.." ("..charName..")", key = "REALID|"..id })
 	end
 
-	return tbl;
+	return tbl
 end
 
 function RAQ_CreateHeaderContext()
-	local info = {};
-	local temp = CreateFrame("Frame", "RAQHeaderContextMenu", RAQFrame, "UIDropDownMenuTemplate");
-	temp.displayMode = "MENU";
+	local info = {}
+	local temp = CreateFrame("Frame", "RAQHeaderContextMenu", RAQFrame, "UIDropDownMenuTemplate")
+	temp.displayMode = "MENU"
 
 	local function OnClick(self, arg1)
-		RAQ_HideAllDropDowns();
-		RAQ_StatusReport(getglobal(RAQHeaderContextMenu.owner),false,self.value);
+		RAQ_HideAllDropDowns()
+		RAQ_StatusReport(getglobal(RAQHeaderContextMenu.owner),false,self.value)
 	end
 
 	local function initialize(self, level)
-		level = level or 1;
+		level = level or 1
 		if( RAQHeaderContextMenu.owner ~= nil ) then
 			if( level == 1 ) then
-				local t = RAQ_GetReportList();
-				local info = UIDropDownMenu_CreateInfo();
+				local t = RAQ_GetReportList()
+				local info = UIDropDownMenu_CreateInfo()
 				for i,v in ipairs(t) do
-					info = UIDropDownMenu_CreateInfo();
-					info.notCheckable = 1;
+					info = UIDropDownMenu_CreateInfo()
+					info.notCheckable = 1
 					if( v.title ) then
-						info.isTitle = true;
-						info.text = v.title;
-						info.value = nil;
-						info.func = nil;
+						info.isTitle = true
+						info.text = v.title
+						info.value = nil
+						info.func = nil
 					else
-						info.isTitle = nil;
-						info.func = OnClick;
-						info.text = v.name;
-						info.value = v.key;
+						info.isTitle = nil
+						info.func = OnClick
+						info.text = v.name
+						info.value = v.key
 					end
-					UIDropDownMenu_AddButton(info, level);
+					UIDropDownMenu_AddButton(info, level)
 				end
 
-				wipe(info);
-				info.notCheckable = 1;
-				UIDropDownMenu_AddButton(info, level);
+				wipe(info)
+				info.notCheckable = 1
+				UIDropDownMenu_AddButton(info, level)
 
-				info.text = CANCEL;
-				info.func = RAQ_HideAllDropDowns;
-				info.notCheckable = 1;
-				UIDropDownMenu_AddButton(info, level);
+				info.text = CANCEL
+				info.func = RAQ_HideAllDropDowns
+				info.notCheckable = 1
+				UIDropDownMenu_AddButton(info, level)
 			end
 		end
 	end
 
-	UIDropDownMenu_Initialize(RAQHeaderContextMenu, initialize);
+	UIDropDownMenu_Initialize(RAQHeaderContextMenu, initialize)
 end
 
 function RAQ_CreatePlayerContext()
-	local info = {};
-	local temp = CreateFrame("Frame", "RAQPlayerContextMenu", RAQFrame, "UIDropDownMenuTemplate");
-	temp.displayMode = "MENU";
+	local info = {}
+	local temp = CreateFrame("Frame", "RAQPlayerContextMenu", RAQFrame, "UIDropDownMenuTemplate")
+	temp.displayMode = "MENU"
 
 	local function OnReportClick(self, arg1)
-		RAQ_HideAllDropDowns();
-		RAQ_StatusReport(getglobal(RAQPlayerContextMenu.owner.."Player"),true,self.value);
+		RAQ_HideAllDropDowns()
+		RAQ_StatusReport(getglobal(RAQPlayerContextMenu.owner.."Player"),true,self.value)
 	end
 
 	local function initialize(self, level)
-		level = level or 1;
+		level = level or 1
 		if( RAQPlayerContextMenu.owner ~= nil ) then
 			if( level == 1 ) then
-				wipe(info);
+				wipe(info)
 
 				-- FIXME: These should be localized.
-				info.isTitle = 1;
-				info.notCheckable = 1;
-				info.text = getglobal(RAQPlayerContextMenu.owner.."Player"):GetText();
-				UIDropDownMenu_AddButton(info, level);
+				info.isTitle = 1
+				info.notCheckable = 1
+				info.text = getglobal(RAQPlayerContextMenu.owner.."Player"):GetText()
+				UIDropDownMenu_AddButton(info, level)
 
-				info.disabled = nil;
-				info.isTitle = nil;
+				info.disabled = nil
+				info.isTitle = nil
 
-				info.text = "Rescan";
+				info.text = "Rescan"
 				info.func = function()
-					RAQ_RescanPlayer(getglobal(RAQPlayerContextMenu.owner.."Player"):GetText());
+					RAQ_RescanPlayer(getglobal(RAQPlayerContextMenu.owner.."Player"):GetText())
 				end
-				UIDropDownMenu_AddButton(info, level);
+				UIDropDownMenu_AddButton(info, level)
 
---				info.text = "[NYI] Add to ignore list";
---				info.func = nil;
---				UIDropDownMenu_AddButton(info, level);
-			
-				info.text = "Report";
-				info.hasArrow = true;
-				UIDropDownMenu_AddButton(info, level);
-				info.hasArrow = false;
+--				info.text = "[NYI] Add to ignore list"
+--				info.func = nil
+--				UIDropDownMenu_AddButton(info, level)
 
-				info.text = CANCEL;
-				info.func = RAQ_HideAllDropDowns;
-				UIDropDownMenu_AddButton(info, level);
+				info.text = "Report"
+				info.hasArrow = true
+				UIDropDownMenu_AddButton(info, level)
+				info.hasArrow = false
+
+				info.text = CANCEL
+				info.func = RAQ_HideAllDropDowns
+				UIDropDownMenu_AddButton(info, level)
 			end
-		
+
 			if( level == 2 ) then
-				local t = RAQ_GetReportList();
+				local t = RAQ_GetReportList()
 
-				local info = UIDropDownMenu_CreateInfo();
+				local info = UIDropDownMenu_CreateInfo()
 				for i,v in ipairs(t) do
-					info = UIDropDownMenu_CreateInfo();
+					info = UIDropDownMenu_CreateInfo()
 
-					info.notCheckable = 1;
+					info.notCheckable = 1
 					if( v.title ) then
-						info.isTitle = true;
-						info.text = v.title;
-						info.value = nil;
-						info.func = nil;
+						info.isTitle = true
+						info.text = v.title
+						info.value = nil
+						info.func = nil
 					else
-						info.isTitle = nil;
-						info.func = OnReportClick;
-						info.text = v.name;
-						info.value = v.key;
+						info.isTitle = nil
+						info.func = OnReportClick
+						info.text = v.name
+						info.value = v.key
 					end
-					UIDropDownMenu_AddButton(info, level);
+					UIDropDownMenu_AddButton(info, level)
 				end
 			end
 		end
 	end
 
-	UIDropDownMenu_Initialize(RAQPlayerContextMenu, initialize);
+	UIDropDownMenu_Initialize(RAQPlayerContextMenu, initialize)
 end

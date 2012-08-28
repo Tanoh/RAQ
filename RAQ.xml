@@ -1,8 +1,14 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/"   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"   xsi:schemaLocation="http://www.blizzard.com/wow/ui/"> 
 
-<Script file="Achievements.lua" />
+<Script file="achievements\main.lua" />
+<Script file="achievements\classic.lua" />
+<Script file="achievements\tbc.lua" />
+<Script file="achievements\wotlk.lua" />
+<Script file="achievements\cataclysm.lua" />
+<Script file="achievements\mop.lua" />
+<Script file="achievements\challenges.lua" />
+<Script file="achievements\pvp.lua" />
 <Script file="RAQ.lua" />
-
 
 <Button name="RAQFrameDataButtonTemplate" virtual="true">
 	<Size x="20" y="20" />
@@ -129,7 +135,7 @@
 			</Anchors>
 		</Button>
 		<Button name="$parentResetButton" inherits="UIPanelButtonTemplate" id="2" text="Reset">
-			<Size x="60" y="21" />
+			<Size x="50" y="21" />
 			<Anchors>
 				<Anchor point="TOPRIGHT">
 					<Offset x="-35" y="-28" />
@@ -142,7 +148,7 @@
 			</Scripts>
 		</Button>
 		<Button name="$parentScanButton" inherits="UIPanelButtonTemplate" id="1" text="Scan">
-			<Size x="60" y="21" />
+			<Size x="50" y="21" />
 			<Anchors>
 				<Anchor point="TOPRIGHT" relativeTo="$parentResetButton" relativePoint="TOPLEFT">
 					<Offset x="0" y="0" />
@@ -164,7 +170,7 @@
 			</Anchors>
 			<Scripts>
 				<OnClick>
-					RAQ_HandleButton(self);
+					RAQ_HandleButton(self)
 				</OnClick>
 			</Scripts>
 			<NormalTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Up"/>
@@ -181,7 +187,7 @@
 			</Anchors>
 			<Scripts>
 				<OnClick>
-					RAQ_HandleButton(self);
+					RAQ_HandleButton(self)
 				</OnClick>
 			</Scripts>
 			<NormalTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Up"/>
@@ -192,13 +198,13 @@
 	</Frames>
 	<Scripts>
 		<OnLoad>
-			self:RegisterForDrag("LeftButton");
+			self:RegisterForDrag("LeftButton")
 		</OnLoad>
 		<OnDragStart>
-			self:StartMoving();
+			self:StartMoving()
 		</OnDragStart>
 		<OnDragStop>
-			self:StopMovingOrSizing();
+			self:StopMovingOrSizing()
 		</OnDragStop>
 	</Scripts>
 </Frame>
@@ -208,14 +214,14 @@
 		<AbsDimension x="10" y="10" />
 	</Size>
 	<Anchors>
-		<Anchor point="CENTER" />
+		<Anchor point="TOPLEFT" />
 	</Anchors>
 	<Scripts>
 		<OnLoad>
-			RAQ_OnLoad(self);
+			RAQ_OnLoad(self)
 		</OnLoad>
 		<OnEvent>
-			RAQ_EventHandler(event);
+			RAQ_EventHandler(event, ...)
 		</OnEvent>
 		
 		<OnUpdate function="RAQ_UpdateHandler" />

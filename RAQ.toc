@@ -1,7 +1,8 @@
-## Interface: 40300
+## Interface: 50001
 ## Author: Jonas Fällman
 ## X-Email: jonas@fallman.org
 ## Title: Raid Achievement Query
-## Notes: Scans your party/raid's progress in various PvE related achievements
-## Version: 4.3b
+## Notes: Scans your party/raid's progress in various PvE and PvP related achievements
+## Version: 5.0
+## SavedVariables: RAQ_OPTION
 RAQ.xml
