@@ -258,7 +258,7 @@ function RAQ_CreateScanList()
 		end
 	else
 		table.insert(list,"player")
-		for i=1,num do
+		for i=1,num-1 do
 			table.insert(list,"party"..i)
 		end
 	end
@@ -1459,13 +1459,13 @@ function RAQ_GetReportList()
 	-- RealID.
 	first = true
 	for i=1, select(2, BNGetNumFriends()) do
-		local id,realNameOne,realNameTwo,charName = BNGetFriendInfo(i)
+		local id,realName,battleTag,_,charName = BNGetFriendInfo(i)
 
 		if( first ) then
 			table.insert(tbl,{ title = "Real ID friends" })
 			first = false
 		end
-		table.insert(tbl, { name = realNameOne.." "..realNameTwo.." ("..charName..")", key = "REALID|"..id })
+		table.insert(tbl, { name = realName.." ("..charName..")", key = "REALID|"..id })
 	end
 
 	return tbl
