@@ -159,5 +159,15 @@ function RAQ_UpdateScan()
 			end
 		end
 	end
+
+	-- scenarios.
+	for k,v in pairs(RAQ_DB["_scenario"]) do
+		for k2,v2 in pairs(v) do
+			if( k2 ~= "_meta" ) then
+				RAQ_DB["_scan"][k2] = true
+			end
+		end
+	end
+
 end
 

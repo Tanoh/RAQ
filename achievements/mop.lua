@@ -172,6 +172,68 @@ function RAQ_Achievements_InitMoP()
 		},
 	})
 
+	-- Meta
+	RAQ_AddMeta({
+		expansion = exp,
+		category = pve,
+		name = "Pandaria Dungeon Hero",
+		ids = {
+			6456, 6761, 6759, 6763, 6760, 6756, 6762, 6470, 6758, 
+		}
+	})
+	
+	RAQ_AddMeta({
+		expansion = exp,
+		category = pve,
+		name = "Glory of the Pandaria Hero",
+		ids = {
+			6925, 6475, 6394, 6715, 6396, 6479, 6457, 6757, 6472,
+			6478, 6471, 6821, 6460, 6420, 6531, 6402, 6089, 6945,
+			6946, 6755, 6427, 6713, 6476, 6477, 6671, 6469, 6928,
+			6684, 6929, 6822, 6400, 6688, 6736, 6485,
+		}
+	})
+
+	RAQ_AddMeta({
+		expansion = exp,
+		category = pve,
+		name = "Glory of the Pandaria Raider",
+		ids = {
+			6823, -- Must Love Dogs
+			6674, -- Anything You Can Do, I Can Do Better...
+			7056, -- Sorry, Were You Looking for This?
+			6687, -- Getting Hot In Here
+			6686, -- Straight Six
+			6455, -- Show Me Your Moves!
+			6937, -- Overzealous
+			6936, -- Candle in the Wind
+			6553, -- Like an Arrow to the Face
+			6683, -- Less Than Three
+			6518, -- I Heard You Like Amber...
+			6922, -- Timing is Everything
+			6717, -- Power Overwhelming
+			6824, -- Face Clutchers
+			6933, -- Who's Got Two Green Thumbs?
+			6825, -- The Mind-Killer
+			6719, -- Heroic: Stone Guard
+			6720, -- Heroic: Feng the Accursed
+			6721, -- Heroic: Gara'jal the Spiritbinder
+			6722, -- Heroic: Four Kings
+			6723, -- Heroic: Elegon
+			6724, -- Heroic: Will of the Emperor
+			6725, -- Heroic: Imperial Vizier Zor'lok
+			6726, -- Heroic: Blade Lord Ta'yak
+			6727, -- Heroic: Garalon
+			6728, -- Heroic: Wind Lord Mel'jarak
+			6729, -- Heroic: Amber-Shaper Un'sok
+			6730, -- Heroic: Grand Empress Shek'zeer
+			6731, -- Heroic: Protectors of the Endless
+			6732, -- Heroic: Tsulong
+			6733, -- Heroic: Lei Shi
+		}
+	})
+
+
 
 	-- Scenarios.
 	-- FIXME: If they add more scenarios this should probably be moved to a file of it's own.
@@ -181,11 +243,10 @@ function RAQ_Achievements_InitMoP()
 		expansion = exp,
 		name = "Scenarios",
 		ids = {
-			["shared"] = { 7252, 7271, 7273, 6931, 6923, 7522, 7257, 7276, 7270, 7265, 7272, 7275, 7239, 7248, 7258, 7267, 7385, 6943, 7266, 7231, 7269, 7232, 7261, 7268, 7249, 6930 },
+			["shared"] = { 7252, 7271, 7273, 6931, 6923, 7522, 7257, 7276, 7265, 7272, 7275, 7239, 7248, 7258, 7267, 7385, 6943, 7266, 7231, 7232, 7261, 7249, 6930 },
 			["Horde"] = { 7529, 7530, 7509, 7524 },
 			["Alliance"] = { 7526, 7527, 6874, 7523 },
 		}
 	})
 end
-
 

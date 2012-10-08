@@ -761,7 +761,7 @@ function RAQ_StatusReport(self,isPlayer,target)
 				local maxLength = 255
 
 				if( #out["incomplete"] == 0 ) then
-					SendChatMessage(string.format("[RAQ] %s: %s has completed all.",header,playerName),target,nil,targetTwo)
+					RAQ_SendMessage(string.format("[RAQ] %s: %s has completed all.",header,playerName), isRealID, target, targetTwo)
 				else
 					local out = string.format("[RAQ] %s: %s needs %d of %d: %s",header,playerName,#out["incomplete"],count,incomplete)
 					local temp = ''
@@ -1101,6 +1101,7 @@ function RAQ_CreateMainDropDown()
 					sort = 40,
 				})
 
+				-- Ugly hack.
 				if( includeEntry(RAQ_DB["_scenario"]["Scenarios"]["_meta"], { category = "pve" }) ) then
 					table.insert(t, {
 						name = "Scenarios",

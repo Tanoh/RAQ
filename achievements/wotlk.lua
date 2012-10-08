@@ -527,7 +527,7 @@ function RAQ_Achievements_InitWotlk()
 		expansion = exp,
 		subcategory = "raid",
 		name = "Vault of Archavon (10 player)",
-		ids = { 4016 }
+		ids = { 4016, 1722, 3136, 3836, 4585 }
 	})
 
 	RAQ_AddAchievement({
@@ -535,7 +535,7 @@ function RAQ_Achievements_InitWotlk()
 		expansion = exp,
 		subcategory = "raid",
 		name = "Vault of Archavon (25 player)",
-		ids = { 4017 }
+		ids = { 4017, 1721, 3137, 3837, 4586 }
 	})
 
 	RAQ_AddAchievement({
