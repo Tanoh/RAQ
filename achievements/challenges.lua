@@ -15,80 +15,71 @@ function RAQ_Achievements_InitChallenges()
 		category = pve,
 		expansion = exp,
 		subcategory = "challenge",
-		name = "Challenge: Challenge Conqueror",
-		ids = { 6920, 6374, 6378, 6375 }
+		name = "Challenge Conqueror",
+		ids = {
+			6894, -- Gate of the Setting Sun 
+			6892, -- Mogu'shan Palace 
+			6895, -- Scarlet Halls 
+			6896, -- Scarlet Monastery 
+			6897, -- Scholomance 
+			6893, -- Shado-Pan Monastery 
+			6898, -- Siege of Niuzao Temple 
+			6888, -- Stormstout Brewery 
+			6884, -- Temple of the Jade Serpent 
+		}
+	})
+	RAQ_AddAchievement({
+		category = pve,
+		expansion = exp,
+		subcategory = "challenge",
+		name = "Challenge Conqueror: Bronze",
+		ids = {
+			6905, -- Gate of the Setting Sun 
+			6899, -- Mogu'shan Palace 
+			6908, -- Scarlet Halls 
+			6911, -- Scarlet Monastery 
+			6914, -- Scholomance 
+			6902, -- Shado-Pan Monastery 
+			6917, -- Siege of Niuzao Temple 
+			6889, -- Stormstout Brewery 
+			6885, -- Temple of the Jade Serpent 
+		}
 	})
 
 	RAQ_AddAchievement({
 		category = pve,
 		expansion = exp,
 		subcategory = "challenge",
-		name = "Challenge: Gate of the Setting Sun",
-		ids = { 6894, 6905, 6907, 6906 }
+		name = "Challenge Conqueror: Silver",
+		ids = {
+			6906, -- Gate of the Setting Sun 
+			6900, -- Mogu'shan Palace 
+			6909, -- Scarlet Halls 
+			6912, -- Scarlet Monastery 
+			6915, -- Scholomance 
+			6903, -- Shado-Pan Monastery 
+			6918, -- Siege of Niuzao Temple 
+			6890, -- Stormstout Brewery 
+			6886, -- Temple of the Jade Serpent 
+		}
 	})
-
+	
 	RAQ_AddAchievement({
 		category = pve,
 		expansion = exp,
 		subcategory = "challenge",
-		name = "Challenge: Mogu'shan Palace",
-		ids = { 6892, 6899, 6901, 6900 }
-	})
-
-	RAQ_AddAchievement({
-		category = pve,
-		expansion = exp,
-		subcategory = "challenge",
-		name = "Challenge: Scarlet Halls",
-		ids = { 6895, 6908, 6910, 6909 }
-	})
-
-	RAQ_AddAchievement({
-		category = pve,
-		expansion = exp,
-		subcategory = "challenge",
-		name = "Challenge: Scarlet Monastery",
-		ids = { 6896, 6911, 6913, 6912 }
-	})
-
-	RAQ_AddAchievement({
-		category = pve,
-		expansion = exp,
-		subcategory = "challenge",
-		name = "Challenge: Scholomance",
-		ids = { 6897, 6914, 6916, 6915 }
-	})
-
-	RAQ_AddAchievement({
-		category = pve,
-		expansion = exp,
-		subcategory = "challenge",
-		name = "Challenge: Shado-Pan Monastery",
-		ids = { 6893, 6902, 6904, 6903 }
-	})
-
-	RAQ_AddAchievement({
-		category = pve,
-		expansion = exp,
-		subcategory = "challenge",
-		name = "Challenge: Siege of Niuzao Temple",
-		ids = { 6898, 6917, 6919, 6918 }
-	})
-
-	RAQ_AddAchievement({
-		category = pve,
-		expansion = exp,
-		subcategory = "challenge",
-		name = "Challenge: Stormstout Brewery",
-		ids = { 6888, 6889, 6891, 6890 }
-	})
-
-	RAQ_AddAchievement({
-		category = pve,
-		expansion = exp,
-		subcategory = "challenge",
-		name = "Challenge: Temple of the Jade Serpent",
-		ids = { 6884, 6885, 6887, 6886 }
+		name = "Challenge Conqueror: Gold",
+		ids = {
+			6907, -- Gate of the Setting Sun 
+			6901, -- Mogu'shan Palace 
+			6910, -- Scarlet Halls 
+			6913, -- Scarlet Monastery 
+			6916, -- Scholomance 
+			6904, -- Shado-Pan Monastery 
+			6919, -- Siege of Niuzao Temple 
+			6891, -- Stormstout Brewery 
+			6887, -- Temple of the Jade Serpent 
+		}
 	})
 end
 
