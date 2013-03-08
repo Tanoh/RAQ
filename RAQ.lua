@@ -12,6 +12,8 @@
 		* Fix the various FIXMEs.
 		* Localization on a lot of things
 		* Implement ignore list.
+		* I don't think it's possible to get sub-criterias from the WoW
+		  API for other players.
 		* Scenarios are a bit of a hack. It should probably be a mode,
 		  but that doesn't make a whole lot of sense when there is only
 		  one category.

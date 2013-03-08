@@ -151,7 +151,8 @@ function RAQ_Achievements_InitMoP()
 		ids = {
 			[6458] = "",
 			[6844] = "",
-			
+			[7933] = "",
+
 			[6723] = "Elegon",
 			[6686] = "Elegon",
 			
@@ -159,7 +160,7 @@ function RAQ_Achievements_InitMoP()
 			[6674] = "Feng the Accursed",
 			
 			[6722] = "Four Kings",
-			[6687] = "Four Kings", -- FIXME: Verify.
+			[6687] = "Four Kings",
 			
 			[6721] = "Gara'jal the Spiritbinder",
 			[7056] = "Gara'jal the Spiritbinder",
@@ -171,6 +172,59 @@ function RAQ_Achievements_InitMoP()
 			[6455] = "Will of the Emperor",
 		},
 	})
+	RAQ_AddAchievement({
+		category = pve,
+		expansion = exp,
+		subcategory = "raid",
+		name = "Throne of Thunder",
+		ids = {
+			[8070] = "", -- Forgotten Depths
+			[8071] = "", -- Halls of Flesh-Shaping
+			[8069] = "", -- Last Stand of the Zandalari
+			[8072] = "", -- Pinnacle of Storms
+
+			[8056] = "Jin'rokh the Breaker", -- Heroic: Jin'rokh the Breaker
+			[8094] = "Jin'rokh the Breaker", -- Lightning Overload
+
+			[8038] = "Horridon", -- Cretaceous Collector
+			[8057] = "Horridon", -- Heroic: Horridon
+
+			[8073] = "Council of Elders", -- Cage Match
+			[8058] = "Council of Elders", -- Heroic: Council of Elders
+
+			[8077] = "Tortos", -- One-Up
+			[8059] = "Tortos", -- Heroic: Tortos
+
+			[8060] = "Magaera", -- Heroic: Megaera
+			[8082] = "Magaera", -- Head Case
+
+			[8097] = "Ji-Kun", -- Soft Hands
+			[8061] = "Ji-Kun", -- Heroic: Ji-Kun
+
+			[8098] = "Durumu the Forgotten", -- You Said Crossing the Streams Was Bad
+			[8062] = "Durumu the Forgotten", -- Heroic: Durumu the Forgotten
+
+			[8037] = "Primordius", -- Genetically Unmodified Organism
+			[8063] = "Primordius", -- Heroic: Primordius
+
+			[8064] = "Dark Animus", -- Heroic: Dark Animus
+			[8081] = "Dark Animus", -- Ritualist Who?
+
+			[8087] = "Iron Qon", -- Can't Touch This
+			[8065] = "Iron Qon", -- Heroic: Iron Qon
+
+			[8086] = "Twin Consorts", -- From Dusk 'til Dawn
+			[8066] = "Twin Consorts", -- Heroic: Twin Consorts
+
+			[8090] = "Lei Shen", -- A Complete Circuit
+			[8067] = "Lei Shen", -- Heroic: Lei Shen
+
+			[8068] = "Ra-den", -- Heroic: Ra-den
+		},
+	})
+
+	-- [8123] = "", -- Millions of Years of Evolution vs. My Fist: Defeat Oondasta on the Isle of Giants.
+	-- [8028] = "", -- Praise the Sun!: Defeat Nalak, the Storm Lord, on the Isle of Thunder.
 
 	-- Meta
 	RAQ_AddMeta({
@@ -233,6 +287,36 @@ function RAQ_Achievements_InitMoP()
 		}
 	})
 
+	RAQ_AddMeta({
+		expansion = exp,
+		category = pve,
+		name = "Glory of the Thundering Raider",
+		ids = {
+			8056, -- Heroic: Jin'rokh the Breaker
+			8057, -- Heroic: Horridon
+			8058, -- Heroic: Council of Elders
+			8059, -- Heroic: Tortos
+			8060, -- Heroic: Megaera
+			8061, -- Heroic: Ji-Kun
+			8062, -- Heroic: Durumu the Forgotten
+			8063, -- Heroic: Primordius
+			8064, -- Heroic: Dark Animus
+			8065, -- Heroic: Iron Qon
+			8066, -- Heroic: Twin Consorts
+			8094, -- Lightning Overload
+			8038, -- Cretaceous Collector
+			8073, -- Cage Match
+			8077, -- One-Up
+			8082, -- Head Case
+			8097, -- Soft Hands
+			8098, -- You Said Crossing the Streams Was Bad
+			8037, -- Genetically Unmodified Organism
+			8081, -- Ritualist Who?
+			8087, -- Can't Touch This
+			8086, -- From Dusk 'til Dawn
+			8090, -- A Complete Circuit
+		}
+	})
 
 
 	-- Scenarios.
