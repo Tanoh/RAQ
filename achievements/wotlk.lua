@@ -63,8 +63,8 @@ function RAQ_Achievements_InitWotlk()
 	RAQ_AddAchievement({
 		category = pve,
 		expansion = exp,
-		name = "Ahn'kahet",
-		ids = { 2038, 1862, 2056 },
+		name = "Ahn'kahet: The Old Kingdom",
+		ids = { 481, 492, 2038, 1862, 2056 },
 	})
 
 	RAQ_AddAchievement({
@@ -146,13 +146,6 @@ function RAQ_Achievements_InitWotlk()
 		expansion = exp,
 		name = "Caverns of Time: Stratholme",
 		ids = { 500, 479 },
-	})
-
-	RAQ_AddAchievement({
-		category = pve,
-		expansion = exp,
-		name = "Ahn'kahet: The Old Kingdom",
-		ids = { 481, 492 },
 	})
 
 
@@ -586,7 +579,20 @@ function RAQ_Achievements_InitWotlk()
 		}
 	})
 
+
 	-- Meta
+	RAQ_AddMeta({
+		expansion = exp,
+		category = pve,
+		name = "Glory of the Hero",
+		ids = {
+			1816, 1817, 2152, 2037, 1868, 1919, 1862, 2039, 1866,
+			1871, 2045, 2154, 2150, 1865, 2038, 2042, 2151, 2046,
+			2043, 2040, 1872, 2036, 2057, 2155, 1297, 2056, 1864,
+			1834, 2044, 2153, 2157, 2156, 1873, 2041, 1867, 1860,
+			2058, 1296
+		}
+	})
 	RAQ_AddMeta({
 		expansion = exp,
 		category = pve,

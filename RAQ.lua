@@ -22,8 +22,10 @@
 
 
 RAQ_DEBUG = false
-RAQ_SCAN_TIMEOUT = 3; -- Timeout in seconds for the scanner.
-RAQ_REFRESH_TIMEOUT = 60*60; -- Timeout in seconds before a re-scan.
+-- Timeout in seconds for the scanner.
+RAQ_SCAN_TIMEOUT = 3
+-- Timeout in seconds before a re-scan.
+RAQ_REFRESH_TIMEOUT = 60*60
 RAQ_DB = {}
 RAQ_OPTION = {}
 RAQ_DATA = {}
@@ -483,6 +485,10 @@ function RAQ_ShowHeaderContextMenu(self)
 	ToggleDropDownMenu(1, nil, RAQHeaderContextMenu, "cursor")
 end
 
+function RAQ_IsWrath()
+	return WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC
+end
+
 function RAQ_OnLoad(self)
 	local tempFrame,theFrame,tempPlayer
 
@@ -498,6 +504,18 @@ function RAQ_OnLoad(self)
 
 	getglobal("RAQFrameTitleText"):SetText("RAQ version "..GetAddOnMetadata("RAQ", "Version"))
 
+	local frame = getglobal("RAQFrame")
+	if( not frame.SetFixedFrameStrata ) then
+		-- Classic before Wrath. FIXME.
+		RAQ_Error("Running classic before wrath version, not sure how to handle backdrop")
+	else
+		local border = CreateFrame("Frame", nil, frame, "DialogBorderOpaqueTemplate")
+		border:SetAllPoints(frame)
+		frame:SetFixedFrameStrata(true)
+		frame:SetFixedFrameLevel(true)
+	end
+
+
 	-- Global achievements DB init.
 	RAQ_InitAchievements()
 
@@ -505,11 +523,13 @@ function RAQ_OnLoad(self)
 	RAQ_Achievements_InitClassic()
 	RAQ_Achievements_InitTBC()
 	RAQ_Achievements_InitWotlk()
-	RAQ_Achievements_InitCataclysm()
-	RAQ_Achievements_InitMoP()
+	if( RAQ_IsWrath() == false ) then
+		RAQ_Achievements_InitCataclysm()
+		RAQ_Achievements_InitMoP()
 
-	-- Misc achievements.
-	RAQ_Achievements_InitChallenges()
+		-- Misc achievements.
+		RAQ_Achievements_InitChallenges()
+	end
 
 	-- Init pvp data.
 	RAQ_Achievements_InitPvP()
@@ -1104,13 +1124,15 @@ function RAQ_CreateMainDropDown()
 				})
 
 				-- Ugly hack.
-				if( includeEntry(RAQ_DB["_scenario"]["Scenarios"]["_meta"], { category = "pve" }) ) then
-					table.insert(t, {
-						name = "Scenarios",
-						value = { "_scenario", "Scenarios" },
-						arrow = false,
-						sort = 50,
-					})
+				if( RAQ_IsWrath() == false ) then
+					if( includeEntry(RAQ_DB["_scenario"]["Scenarios"]["_meta"], { category = "pve" }) ) then
+						table.insert(t, {
+							name = "Scenarios",
+							value = { "_scenario", "Scenarios" },
+							arrow = false,
+							sort = 50,
+						})
+					end
 				end
 			elseif( getCategory() == "pvp" ) then
 				table.insert(t, {
@@ -1412,9 +1434,12 @@ end
 
 function RAQ_BuildChannelList(...)
 	local tbl = {}
-	for i=1,select('#',...), 2 do
-		local id,name = select(i,...)
-		table.insert(tbl, { name = id..". "..name, key = "CHANNEL|"..id })
+	for i=1,select('#',...), 3 do
+		local id,name,avail = select(i,...)
+		table.insert(tbl, {
+			name = tostring(id)..". "..name,
+			key = "CHANNEL|"..tostring(id)
+		})
 	end
 	return tbl
 end
@@ -1468,7 +1493,12 @@ function RAQ_GetReportList()
 			table.insert(tbl,{ title = "Real ID friends" })
 			first = false
 		end
-		table.insert(tbl, { name = realName.." ("..charName..")", key = "REALID|"..id })
+		if( charName ~= nil ) then
+			table.insert(tbl, {
+				name = realName.." ("..charName..")",
+				key = "REALID|"..id
+			})
+		end
 	end
 
 	return tbl

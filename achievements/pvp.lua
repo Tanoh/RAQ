@@ -90,40 +90,6 @@ function RAQ_Achievements_InitPvP()
 		key = keyName,
 		category = pvp,
 		subcategory = "bg",
-		name = "Twin Peaks",
-		ids = {
-			["shared"] = { 5223, 5216, 5211, 5208, 5230, 5215, 5209, 5210 },
-			["Horde"] = { 5227, 5552, 5222, 5220, 5214, 5228 },
-			["Alliance"] = { 5226, 5231, 5229, 5221, 5219, 5213 },
-		}
-	})
-
-	RAQ_AddAchievement({
-		key = keyName,
-		category = pvp,
-		subcategory = "bg",
-		name = "Silvershard Mines",
-		ids = {
-			7057, 7102, 7099, 7103, 7106, 7049, 7062, 7100, 6883,
-			6739, 7039
-		}
-	})
-
-	RAQ_AddAchievement({
-		key = keyName,
-		category = pvp,
-		subcategory = "bg",
-		name = "Temple of Kotmogu",
-		ids = {
-			6970, 6973, 6947, 6971, 6981, 6950, 6980, 6882, 6740,
-			6972
-		}
-	})
-
-	RAQ_AddAchievement({
-		key = keyName,
-		category = pvp,
-		subcategory = "bg",
 		name = "Wintergrasp",
 		ids = {
 			["shared"] = { 1722, 1721, 2080, 1751, 3136, 3137, 3836, 3837, 1727, 1752, 4585, 4586, 1723, 2199, 1718, 1717, 1755 },
@@ -132,19 +98,6 @@ function RAQ_Achievements_InitPvP()
 		}
 	})
 
-	RAQ_AddAchievement({
-		key = keyName,
-		category = pvp,
-		subcategory = "bg",
-		name = "Tol Barad",
-		ids = {
-			["shared"] = { 6108, 6045, 5416, 5486, 5487, 5412, 5415, 5488 },
-			["Horde"] = { 5719, 5490, 5418 },
-			["Alliance"] = { 5718, 5489, 5417 },
-		}
-	})
-	
-	
 	
 	-- Arena
 	RAQ_AddAchievement({
@@ -159,19 +112,67 @@ function RAQ_Achievements_InitPvP()
 		}
 	});
 
-	
-	-- Rated Battleground
-	RAQ_AddAchievement({
-		key = keyName,
-		category = pvp,
-		subcategory = "Rated Battleground",
-		name = "Rated Battleground",
-		ids = {
-			["shared"] = {},
-			["Horde"] = { 5351, 5338, 5353, 5349, 5355, 5346, 6941, 5356, 5324, 5323, 5269, 5352, 5354, 5345, 5348, 5347, 5350, 5325, 5824, 5326, 5342 },
-			["Alliance"] = { 5340, 5331, 5357, 5343, 6942, 5268, 5327, 5322, 5335, 5337, 5359, 5336, 5339, 5341, 5333, 5330, 5332, 5334, 5328, 5823, 5329 },
-		}
-	});
+	if( RAQ_IsWrath() == false ) then
+		RAQ_AddAchievement({
+			key = keyName,
+			category = pvp,
+			subcategory = "bg",
+			name = "Tol Barad",
+			ids = {
+				["shared"] = { 6108, 6045, 5416, 5486, 5487, 5412, 5415, 5488 },
+				["Horde"] = { 5719, 5490, 5418 },
+				["Alliance"] = { 5718, 5489, 5417 },
+			}
+		})
+
+		RAQ_AddAchievement({
+			key = keyName,
+			category = pvp,
+			subcategory = "bg",
+			name = "Twin Peaks",
+			ids = {
+				["shared"] = { 5223, 5216, 5211, 5208, 5230, 5215, 5209, 5210 },
+				["Horde"] = { 5227, 5552, 5222, 5220, 5214, 5228 },
+				["Alliance"] = { 5226, 5231, 5229, 5221, 5219, 5213 },
+			}
+		})
+
+		RAQ_AddAchievement({
+			key = keyName,
+			category = pvp,
+			subcategory = "bg",
+			name = "Silvershard Mines",
+			ids = {
+				7057, 7102, 7099, 7103, 7106, 7049, 7062, 7100, 6883,
+				6739, 7039
+			}
+		})
+
+		RAQ_AddAchievement({
+			key = keyName,
+			category = pvp,
+			subcategory = "bg",
+			name = "Temple of Kotmogu",
+			ids = {
+				6970, 6973, 6947, 6971, 6981, 6950, 6980, 6882, 6740,
+				6972
+			}
+		})
+
+
+		-- Rated Battleground
+		RAQ_AddAchievement({
+			key = keyName,
+			category = pvp,
+			subcategory = "Rated Battleground",
+			name = "Rated Battleground",
+			ids = {
+				["shared"] = {},
+				["Horde"] = { 5351, 5338, 5353, 5349, 5355, 5346, 6941, 5356, 5324, 5323, 5269, 5352, 5354, 5345, 5348, 5347, 5350, 5325, 5824, 5326, 5342 },
+				["Alliance"] = { 5340, 5331, 5357, 5343, 6942, 5268, 5327, 5322, 5335, 5337, 5359, 5336, 5339, 5341, 5333, 5330, 5332, 5334, 5328, 5823, 5329 },
+			}
+		});
+	end
 
 
 	-- Meta
