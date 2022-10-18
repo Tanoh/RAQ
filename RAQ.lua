@@ -106,12 +106,12 @@ function RAQ_UpdateButtonTooltip(self)
 		repeat
 			nextPos = string.find(temp,"\n")
 			if( nextPos ~= nil ) then
-				table.insert(tbl,strsub(temp,1,nextPos-1))
-				temp = strsub(temp,nextPos+1)
+				table.insert(tbl, strsub(temp, 1, nextPos - 1))
+				temp = strsub(temp, nextPos + 1)
 			end
 		until( nextPos == nil )
 		if( temp ~= "" ) then
-			table.insert(tbl,temp)
+			table.insert(tbl, temp)
 		end
 
 		for k,v in ipairs(tbl) do
@@ -160,10 +160,10 @@ function RAQ_UpdateHeader()
 			col = getglobal("RAQFrameDataHeaderColumn"..i)
 			col.achievementID = data[j]
 
-			texture = select(10,GetAchievementInfo(col.achievementID))
-			name = select(2,GetAchievementInfo(col.achievementID))
-			desc = select(8,GetAchievementInfo(col.achievementID))
-			
+			texture = select(10, GetAchievementInfo(col.achievementID))
+			name = select(2, GetAchievementInfo(col.achievementID))
+			desc = select(8, GetAchievementInfo(col.achievementID))
+
 			if( texture == nil ) then
 				texture = RAQ_TEXTURE["unknown"]
 			end
@@ -258,12 +258,12 @@ function RAQ_CreateScanList()
 	local num = GetNumGroupMembers()
 	if( IsInRaid() ) then
 		for i=1,num do
-			table.insert(list,"raid"..i)
+			table.insert(list, "raid"..i)
 		end
 	else
 		table.insert(list,"player")
 		for i=1,num-1 do
-			table.insert(list,"party"..i)
+			table.insert(list, "party"..i)
 		end
 	end
 	return list
@@ -374,7 +374,7 @@ function RAQ_RunQueue()
 		else
 			RAQ_Error("Failed to SetAchievementComparisonUnit("..RAQ_queue[nextID]..").")
 		end
-		table.remove(RAQ_queue,nextID)
+		table.remove(RAQ_queue, nextID)
 	else
 		RAQ_KillTimer()
 	end
@@ -393,7 +393,7 @@ function RAQ_UpdateUIList()
 	data = RAQ_GetSelectedTable()
 	if( data ~= nil ) then
 		xoffset = (RAQ_CURRENT_PAGE-1) * RAQ_NUMBER_COLUMN
-		FauxScrollFrame_Update(RAQFrameScrollList,#sorted,RAQ_NUMBER_BUTTON,22)
+		FauxScrollFrame_Update(RAQFrameScrollList, #sorted, RAQ_NUMBER_BUTTON, 22)
 		yoffset = FauxScrollFrame_GetOffset(RAQFrameScrollList)
 
 		for k=1,RAQ_NUMBER_BUTTON do
@@ -738,17 +738,17 @@ function RAQ_StatusReport(self,isPlayer,target)
 	end
 
 	if( string.find(target,"CHANNEL|(%d+)") ) then
-		targetTwo = tonumber(select(3,string.find(target,"CHANNEL|(%d+)")))
+		targetTwo = tonumber(select(3, string.find(target,"CHANNEL|(%d+)")))
 		target = "CHANNEL"
 	elseif( string.find(target,"REALID|(%d+)") ) then
 		isRealID = true
-		target = tonumber(select(3,string.find(target,"REALID|(%d+)")))
+		target = tonumber(select(3, string.find(target,"REALID|(%d+)")))
 	elseif( target == "WHISPER" ) then
 		if( UnitName("target") == nil ) then
 			RAQ_Error("No target selected.")
 			return
 		end
-		if( UnitIsPlayer("target") ~= 1 ) then
+		if( UnitIsPlayer("target") == false ) then
 			RAQ_Error("Target is not a player.")
 			return
 		end
@@ -773,7 +773,7 @@ function RAQ_StatusReport(self,isPlayer,target)
 			if( RAQ_DATA[playerName]["_status"] == "SUCCESS" ) then
 				for k,v in ipairs(data) do
 					if( RAQ_DATA[playerName]["_data"][v] == false ) then
-						name = select(2,GetAchievementInfo(v))
+						name = select(2, GetAchievementInfo(v))
 						table.insert(out["incomplete"],name)
 					end
 					count = count + 1
@@ -783,9 +783,19 @@ function RAQ_StatusReport(self,isPlayer,target)
 				local maxLength = 255
 
 				if( #out["incomplete"] == 0 ) then
-					RAQ_SendMessage(string.format("[RAQ] %s: %s has completed all.",header,playerName), isRealID, target, targetTwo)
+					local out = string.format("[RAQ] %s: %s has completed all.",
+						header,
+						playerName
+					)
+					RAQ_SendMessage(out, isRealID, target, targetTwo)
 				else
-					local out = string.format("[RAQ] %s: %s needs %d of %d: %s",header,playerName,#out["incomplete"],count,incomplete)
+					local out = string.format("[RAQ] %s: %s needs %d of %d: %s",
+						header,
+						playerName,
+						#out["incomplete"],
+						count,
+						incomplete
+					)
 					local temp = ''
 					for word in out:gmatch("%S+") do
 						if( string.len(temp..' '..word) >= maxLength ) then
@@ -799,7 +809,10 @@ function RAQ_StatusReport(self,isPlayer,target)
 					end
 				end
 			else
-				RAQ_Error(string.format("%s: Scan failed for %s. Rescan before reporting again.",header,playerName))
+				RAQ_Error(string.format("%s: Scan failed for %s. Rescan before reporting again.",
+					header,
+					playerName
+				))
 			end
 		else
 			RAQ_Error("Nothing selected.")
@@ -1116,15 +1129,15 @@ function RAQ_CreateMainDropDown()
 					value = { "_meta" },
 					sort = 30,
 				})
-				table.insert(t, {
-					name = "Challenges",
-					clickable = false,
-					value = { "_challenge" },
-					sort = 40,
-				})
-
-				-- Ugly hack.
 				if( RAQ_IsWrath() == false ) then
+					table.insert(t, {
+						name = "Challenges",
+						clickable = false,
+						value = { "_challenge" },
+						sort = 40,
+					})
+
+					-- Ugly hack.
 					if( includeEntry(RAQ_DB["_scenario"]["Scenarios"]["_meta"], { category = "pve" }) ) then
 						table.insert(t, {
 							name = "Scenarios",
@@ -1147,12 +1160,14 @@ function RAQ_CreateMainDropDown()
 					value = { "_pvp", "bg" },
 					sort = 1,
 				})
-				table.insert(t, {
-					name = "Rated Battleground",
-					arrow = false,
-					value = { "_pvp", "Rated Battleground" },
-					sort = 2,
-				})
+				if( RAQ_IsWrath() == false ) then
+					table.insert(t, {
+						name = "Rated Battleground",
+						arrow = false,
+						value = { "_pvp", "Rated Battleground" },
+						sort = 2,
+					})
+				end
 				table.insert(t, {
 					name = "Meta",
 					value = { "_pvp", "meta" },
@@ -1466,7 +1481,7 @@ function RAQ_GetReportList()
 	end
 
 	-- Guild.
-	if( select(1,GetGuildInfo("player")) ~= nil ) then
+	if( select(1, GetGuildInfo("player")) ~= nil ) then
 		table.insert(tbl,{ name = "Guild", key = "GUILD" })
 		table.insert(tbl,{ name = "Officer", key = "OFFICER" })
 	end
@@ -1481,7 +1496,7 @@ function RAQ_GetReportList()
 			table.insert(tbl,{ title = "Channels" })
 			first = false
 		end
-		table.insert(tbl,v)
+		table.insert(tbl, v)
 	end
 
 	-- RealID.
@@ -1511,7 +1526,7 @@ function RAQ_CreateHeaderContext()
 
 	local function OnClick(self, arg1)
 		RAQ_HideAllDropDowns()
-		RAQ_StatusReport(getglobal(RAQHeaderContextMenu.owner),false,self.value)
+		RAQ_StatusReport(getglobal(RAQHeaderContextMenu.owner), false, self.value)
 	end
 
 	local function initialize(self, level)
@@ -1559,7 +1574,7 @@ function RAQ_CreatePlayerContext()
 
 	local function OnReportClick(self, arg1)
 		RAQ_HideAllDropDowns()
-		RAQ_StatusReport(getglobal(RAQPlayerContextMenu.owner.."Player"),true,self.value)
+		RAQ_StatusReport(getglobal(RAQPlayerContextMenu.owner.."Player"), true, self.value)
 	end
 
 	local function initialize(self, level)
