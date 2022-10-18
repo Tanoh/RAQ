@@ -14,15 +14,8 @@ function RAQ_Achievements_InitWotlk()
 	RAQ_AddAchievement({
 		category = pve,
 		expansion = exp,
-		name = "Oculus",
-		ids = { 498 },
-	})
-
-	RAQ_AddAchievement({
-		category = pve,
-		expansion = exp,
 		name = "The Culling of Stratholme",
-		ids = { 1817, 1872 },
+		ids = { 1817, 1872, 500, 479 },
 	})
 
 	RAQ_AddAchievement({
@@ -43,7 +36,7 @@ function RAQ_Achievements_InitWotlk()
 		category = pve,
 		expansion = exp,
 		name = "The Violet Hold",
-		ids = { 2153, 1816, 494, 1865, 483 },
+		ids = { 2153, 1816, 494, 1865, 483, 2041 },
 	})
 
 	RAQ_AddAchievement({
@@ -78,7 +71,7 @@ function RAQ_Achievements_InitWotlk()
 		category = pve,
 		expansion = exp,
 		name = "The Oculus",
-		ids = { 2046, 2045, 1868, 2044, 487, 1871 },
+		ids = { 498, 2046, 2045, 1868, 2044, 487, 1871 },
 	})
 
 	RAQ_AddAchievement({
@@ -130,22 +123,8 @@ function RAQ_Achievements_InitWotlk()
 	RAQ_AddAchievement({
 		category = pve,
 		expansion = exp,
-		name = "Violet Hold",
-		ids = { 2041 },
-	})
-
-	RAQ_AddAchievement({
-		category = pve,
-		expansion = exp,
 		name = "The Forge of Souls",
 		ids = { 4519, 4522, 4516, 4523 },
-	})
-
-	RAQ_AddAchievement({
-		category = pve,
-		expansion = exp,
-		name = "Caverns of Time: Stratholme",
-		ids = { 500, 479 },
 	})
 
 
@@ -618,8 +597,9 @@ function RAQ_Achievements_InitWotlk()
 		category = pve,
 		name = "Glory of the Raider (10 player)",
 		ids = {
-			578, 1858, 1856, 1996, 1997, 2178, 2180, 622, 1874,
-			1869, 2047, 2051, 2146, 2176, 2148, 2184
+			-- 578, 1869, 2180 removed from meta 2022-10-18
+			1858, 1856, 1996, 1997, 2178, 622, 1874, 2047, 2051,
+			2146, 2176, 2148, 2184
 		}
 	})
 
@@ -628,8 +608,9 @@ function RAQ_Achievements_InitWotlk()
 		category = pve,
 		name = "Glory of the Raider (25 player)",
 		ids = {
-			579, 1859, 1857, 2139, 2140, 2179, 2177, 2181, 623,
-			1875, 1870, 2048, 2149, 2054, 2147, 2185
+			-- 579, 1870, 2181 removed from meta 2022-10-18
+			1859, 1857, 2139, 2140, 2179, 2177, 623, 1875, 2048,
+			2149, 2054, 2147, 2185
 		}
 	})
 
